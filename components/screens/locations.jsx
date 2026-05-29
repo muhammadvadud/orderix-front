@@ -1,19 +1,133 @@
 'use client';
 import { useState } from 'react';
 import { Icon } from '../Icon';
-import { Card, Button, Badge, Avatar, Drawer, PageHeader, EmptyState } from '../ui';
+import { Card, Button, Badge, Avatar, Drawer, Modal, Field, Input, Select, PageHeader, EmptyState } from '../ui';
 import {
-  TABLES, ZONES, ORDERS,
-  getZoneById, tablesInZone, getTableStatus, TABLE_STATUS_META,
+  ORDERS,
+  TABLE_STATUS_META,
   formatUZS, formatUZSShort, timeAgo,
 } from '@/lib/data';
 
-function TableCard({ table, info, onClick }) {
+const ZONE_ICONS = [
+  'LayoutGrid','Trees','Crown','Sun','Home','Building2','Sofa','Hotel','Mountain',
+  'Waves','Music','Dumbbell','Armchair','MapPin','Globe','Star','Users','Umbrella',
+  'Ship','Compass','Tent','Coffee','Sunset','Flame','Sparkles','Heart',
+];
+
+const ZONE_COLORS = [
+  '#1F4E79','#2E75B6','#27AE60','#F39C12','#E74C3C',
+  '#8e44ad','#16a085','#2c3e50','#d35400','#c0392b',
+  '#0097A7','#558B2F','#6D4C41','#37474F','#F06292',
+];
+
+function ZoneForm({ onSave, onCancel }) {
+  const [name, setName]   = useState('');
+  const [short, setShort] = useState('');
+  const [icon, setIcon]   = useState('LayoutGrid');
+  const [color, setColor] = useState('#1F4E79');
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Zona nomi">
+          <Input value={name} onChange={e => { setName(e.target.value); if (!short) setShort(e.target.value.slice(0, 8)); }} placeholder="masalan: Asosiy zal" />
+        </Field>
+        <Field label="Qisqa nom" hint="Maksimal 8 belgi">
+          <Input value={short} onChange={e => setShort(e.target.value.slice(0, 8))} placeholder="masalan: Zal" />
+        </Field>
+      </div>
+      <Field label="Icon tanlang">
+        <div className="grid grid-cols-9 gap-1.5 p-1">
+          {ZONE_ICONS.map(ic => (
+            <button key={ic} type="button" onClick={() => setIcon(ic)} title={ic}
+              className={`w-full aspect-square flex items-center justify-center rounded-lg border transition ${
+                icon === ic
+                  ? 'text-white border-transparent shadow-sm'
+                  : 'bg-white text-ink-600 border-ink-200 hover:bg-ink-50'
+              }`}
+              style={icon === ic ? { background: color } : {}}>
+              <Icon name={ic} size={16} />
+            </button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Rang tanlang">
+        <div className="flex flex-wrap gap-2 p-1">
+          {ZONE_COLORS.map(c => (
+            <button key={c} type="button" onClick={() => setColor(c)}
+              className={`w-8 h-8 rounded-lg transition border-2 ${color === c ? 'scale-110 border-white ring-2 ring-offset-1' : 'border-transparent hover:scale-105'}`}
+              style={{ background: c, ringColor: c }} />
+          ))}
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
+               style={{ background: color }}>
+            <Icon name={icon} size={16} />
+          </div>
+          <span className="text-[11px] text-ink-500">Ko'rinishi</span>
+        </div>
+      </Field>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" onClick={onCancel}>Bekor qilish</Button>
+        <Button variant="primary" icon="Check"
+          onClick={() => onSave({ name, short: short || name.slice(0, 8), icon, color })}
+          disabled={!name.trim()}>
+          Qoʻshish
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TableForm({ zones, onSave, onCancel }) {
+  const [zoneId, setZoneId] = useState(zones[0]?.id || '');
+  const [seats, setSeats]   = useState(4);
+
+  return (
+    <div className="space-y-4">
+      <Field label="Zona (bo'lim)">
+        <Select
+          value={zoneId}
+          onChange={e => setZoneId(e.target.value)}
+          options={zones.map(z => ({ value: z.id, label: z.name }))}
+        />
+      </Field>
+      <Field label="O'rindiqlar soni">
+        <div className="flex gap-2">
+          {[2, 4, 6, 8, 10, 12].map(n => (
+            <button key={n} type="button" onClick={() => setSeats(n)}
+              className={`flex-1 h-10 rounded-lg border text-sm font-semibold transition ${
+                seats === n
+                  ? 'bg-navy-700 text-white border-navy-700'
+                  : 'bg-white text-ink-700 border-ink-200 hover:bg-ink-50'
+              }`}>
+              {n}
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-500">
+          <Icon name="Users" size={12} />
+          {seats} kishilik stol
+        </div>
+      </Field>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" onClick={onCancel}>Bekor qilish</Button>
+        <Button variant="primary" icon="Check"
+          onClick={() => onSave({ zoneId, seats })}
+          disabled={!zoneId}>
+          Qoʻshish
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TableCard({ table, zone, info, onClick }) {
   const meta = TABLE_STATUS_META[info.status];
   const order = info.order;
   return (
     <button onClick={onClick}
-      className="group relative bg-white rounded-xl border border-ink-100 shadow-card p-3.5 text-left hover:shadow-pop hover:border-accent/40 active:scale-[0.98] transition overflow-hidden">
+      className="group relative bg-white rounded-xl border border-ink-100 shadow-card p-3.5 text-left hover:shadow-pop hover:border-accent/40 active:scale-[0.98] transition overflow-hidden w-full">
       <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: meta.dot }} />
       <div className="flex items-start justify-between pl-1.5 gap-2">
         <div className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider"
@@ -21,7 +135,7 @@ function TableCard({ table, info, onClick }) {
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.dot }} />
           {meta.label}
         </div>
-        <div className="text-[10px] uppercase tracking-wider text-ink-400 font-semibold">{getZoneById(table.zoneId).short}</div>
+        <div className="text-[10px] uppercase tracking-wider text-ink-400 font-semibold">{zone?.short || zone?.name}</div>
       </div>
 
       <div className="pl-1.5 mt-3 flex items-baseline gap-1.5">
@@ -63,16 +177,15 @@ function TableCard({ table, info, onClick }) {
   );
 }
 
-function TableDetail({ table, info, onClose, onMarkClean, onMarkReserved, onMarkFree, onNavigateOrders }) {
-  const zone = getZoneById(table.zoneId);
+function TableDetail({ table, zone, info, onClose, onMarkClean, onMarkReserved, onMarkFree, onNavigateOrders }) {
   const meta = TABLE_STATUS_META[info.status];
   const order = info.order;
 
   return (
     <div className="p-4 sm:p-5 space-y-5">
       <div className="rounded-2xl p-5 text-white relative overflow-hidden"
-           style={{ background: `linear-gradient(135deg, ${zone.color} 0%, #1F4E79 100%)` }}>
-        <div className="text-[11px] uppercase tracking-wider opacity-80 font-semibold">{zone.name}</div>
+           style={{ background: `linear-gradient(135deg, ${zone?.color || '#1F4E79'} 0%, #1F4E79 100%)` }}>
+        <div className="text-[11px] uppercase tracking-wider opacity-80 font-semibold">{zone?.name}</div>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-5xl font-bold num leading-none">{table.number}</span>
           <span className="text-lg opacity-80">stol</span>
@@ -150,17 +263,28 @@ function TableDetail({ table, info, onClose, onMarkClean, onMarkReserved, onMark
   );
 }
 
-export default function LocationsScreen({ orders, staff, onNavigate }) {
+export default function LocationsScreen({ orders, staff, zones, setZones, tables, setTables, onNavigate }) {
   const [zoneFilter, setZoneFilter]     = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [openTableId, setOpenTableId]   = useState(null);
   const [tableOverrides, setTableOverrides] = useState({});
+  const [addTableModal, setAddTableModal]   = useState(false);
+  const [addZoneModal, setAddZoneModal]     = useState(false);
 
-  const tablesWithInfo = TABLES.map(t => {
-    const override = tableOverrides[t.id];
-    if (override) return { table: t, info: { status: override } };
-    return { table: t, info: getTableStatus(t.id, orders) };
-  });
+  function getTableStatus(tableId) {
+    const active = orders.find(o => o.tableId === tableId && (o.status === 'open' || o.status === 'in_progress' || o.status === 'ready'));
+    if (active) return { status: 'occupied', order: active };
+    const override = tableOverrides[tableId];
+    if (override) return { status: override };
+    const t = tables.find(t => t.id === tableId);
+    return { status: t?.initStatus || 'free' };
+  }
+
+  const tablesWithInfo = tables.map(t => ({
+    table: t,
+    zone: zones.find(z => z.id === t.zoneId),
+    info: getTableStatus(t.id),
+  }));
 
   const filtered = tablesWithInfo.filter(({ table, info }) => {
     if (zoneFilter !== 'all' && table.zoneId !== zoneFilter) return false;
@@ -182,22 +306,39 @@ export default function LocationsScreen({ orders, staff, onNavigate }) {
     setTableOverrides(s => ({ ...s, [tableId]: status }));
   }
 
+  function handleAddZone(data) {
+    const id = `z${Date.now()}`;
+    setZones(list => [...list, { id, ...data }]);
+    setAddZoneModal(false);
+  }
+
+  function handleAddTable({ zoneId, seats }) {
+    const zone = zones.find(z => z.id === zoneId);
+    const inZone = tables.filter(t => t.zoneId === zoneId);
+    const nextNumber = inZone.length > 0 ? Math.max(...inZone.map(t => t.number)) + 1 : 1;
+    setTables(list => [...list, { id: `t${Date.now()}`, zoneId, number: nextNumber, seats }]);
+    setAddTableModal(false);
+  }
+
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Joylar"
-        subtitle={`${TABLES.length} ta stol · ${ZONES.length} ta zona`}
+        subtitle={`${tables.length} ta stol · ${zones.length} ta zona`}
         actions={
           <>
-            <Button variant="outline" icon="LayoutGrid">Plan koʻrinishi</Button>
-            <Button variant="primary" icon="Plus">Stol qoʻshish</Button>
+            <Button variant="outline" icon="Layers" onClick={() => setAddZoneModal(true)}>Zona qoʻshish</Button>
+            <Button variant="primary" icon="Plus" onClick={() => setAddTableModal(true)}>Stol qoʻshish</Button>
           </>
         }
       />
 
       <div className="md:hidden mb-4 flex items-end justify-between gap-2">
-        <p className="text-xs text-ink-500">{TABLES.length} ta stol · {ZONES.length} ta zona</p>
-        <Button variant="primary" icon="Plus" size="sm">Qoʻshish</Button>
+        <p className="text-xs text-ink-500">{tables.length} ta stol · {zones.length} ta zona</p>
+        <div className="flex gap-2">
+          <Button variant="outline" icon="Layers" size="sm" onClick={() => setAddZoneModal(true)}>Zona</Button>
+          <Button variant="primary" icon="Plus" size="sm" onClick={() => setAddTableModal(true)}>Stol</Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-5">
@@ -214,10 +355,10 @@ export default function LocationsScreen({ orders, staff, onNavigate }) {
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-xl sm:text-2xl font-bold num text-ink-900">{s.n}</span>
-              <span className="text-xs text-ink-400">/ {TABLES.length}</span>
+              <span className="text-xs text-ink-400">/ {tables.length}</span>
             </div>
             <div className="mt-2 h-1 rounded-full bg-ink-100 overflow-hidden">
-              <div className="h-full rounded-full" style={{ width: `${(s.n / TABLES.length) * 100}%`, background: s.color }} />
+              <div className="h-full rounded-full" style={{ width: `${tables.length ? (s.n / tables.length) * 100 : 0}%`, background: s.color }} />
             </div>
           </Card>
         ))}
@@ -230,10 +371,10 @@ export default function LocationsScreen({ orders, staff, onNavigate }) {
               zoneFilter === 'all' ? 'bg-navy-700 text-white border-navy-700' : 'bg-white text-ink-600 border-ink-200'
             }`}>
             <Icon name="LayoutGrid" size={12} />
-            Barchasi ({TABLES.length})
+            Barchasi ({tables.length})
           </button>
-          {ZONES.map(z => {
-            const count = tablesInZone(z.id).length;
+          {zones.map(z => {
+            const count = tables.filter(t => t.zoneId === z.id).length;
             const active = zoneFilter === z.id;
             return (
               <button key={z.id} onClick={() => setZoneFilter(z.id)}
@@ -271,7 +412,7 @@ export default function LocationsScreen({ orders, staff, onNavigate }) {
       </div>
 
       {zoneFilter === 'all' ? (
-        ZONES.map(z => {
+        zones.map(z => {
           const inZone = filtered.filter(x => x.table.zoneId === z.id);
           if (inZone.length === 0) return null;
           return (
@@ -285,8 +426,8 @@ export default function LocationsScreen({ orders, staff, onNavigate }) {
                 <span className="text-xs text-ink-400">· {inZone.length} ta stol</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-                {inZone.map(({ table, info }) => (
-                  <TableCard key={table.id} table={table} info={info} onClick={() => setOpenTableId(table.id)} />
+                {inZone.map(({ table, zone, info }) => (
+                  <TableCard key={table.id} table={table} zone={zone} info={info} onClick={() => setOpenTableId(table.id)} />
                 ))}
               </div>
             </div>
@@ -298,20 +439,40 @@ export default function LocationsScreen({ orders, staff, onNavigate }) {
             <div className="col-span-full">
               <Card><EmptyState icon="SearchX" text="Bu filtr boʻyicha stol topilmadi" /></Card>
             </div>
-          ) : filtered.map(({ table, info }) => (
-            <TableCard key={table.id} table={table} info={info} onClick={() => setOpenTableId(table.id)} />
+          ) : filtered.map(({ table, zone, info }) => (
+            <TableCard key={table.id} table={table} zone={zone} info={info} onClick={() => setOpenTableId(table.id)} />
           ))}
         </div>
       )}
 
+      {tables.length === 0 && (
+        <Card className="text-center py-16">
+          <div className="inline-flex flex-col items-center gap-3 text-ink-400">
+            <div className="w-12 h-12 rounded-full bg-ink-100 inline-flex items-center justify-center">
+              <Icon name="Armchair" size={22} />
+            </div>
+            <div className="text-sm">Hali stol qoʻshilmagan</div>
+            <Button variant="primary" icon="Plus" onClick={() => setAddTableModal(true)}>Birinchi stolni qoʻshing</Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Mobile FAB */}
+      <button onClick={() => setAddTableModal(true)}
+        className="md:hidden fixed right-4 z-30 w-14 h-14 rounded-full bg-navy-700 text-white shadow-pop hover:bg-navy-800 active:scale-95 inline-flex items-center justify-center transition"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 80px)' }}>
+        <Icon name="Plus" size={22} />
+      </button>
+
       <Drawer
         open={!!openEntry}
         onClose={() => setOpenTableId(null)}
-        title={openEntry ? `${getZoneById(openEntry.table.zoneId).short} · ${openEntry.table.number}-stol` : ''}
+        title={openEntry ? `${openEntry.zone?.short || ''} · ${openEntry.table.number}-stol` : ''}
         width={460}
       >
         {openEntry && <TableDetail
           table={openEntry.table}
+          zone={openEntry.zone}
           info={openEntry.info}
           onClose={() => setOpenTableId(null)}
           onNavigateOrders={() => onNavigate && onNavigate('orders')}
@@ -320,6 +481,23 @@ export default function LocationsScreen({ orders, staff, onNavigate }) {
           onMarkFree={() => { setStatus(openEntry.table.id, 'free'); setOpenTableId(null); }}
         />}
       </Drawer>
+
+      <Modal open={addTableModal} onClose={() => setAddTableModal(false)} title="Stol qoʻshish" width={400}>
+        {addTableModal && zones.length === 0 ? (
+          <div className="text-center py-6">
+            <div className="text-sm text-ink-500 mb-4">Stol qoʻshish uchun avval zona yarating</div>
+            <Button variant="primary" icon="Layers" onClick={() => { setAddTableModal(false); setAddZoneModal(true); }}>
+              Zona qoʻshish
+            </Button>
+          </div>
+        ) : (
+          addTableModal && <TableForm zones={zones} onSave={handleAddTable} onCancel={() => setAddTableModal(false)} />
+        )}
+      </Modal>
+
+      <Modal open={addZoneModal} onClose={() => setAddZoneModal(false)} title="Zona / boʻlim qoʻshish" width={480}>
+        {addZoneModal && <ZoneForm onSave={handleAddZone} onCancel={() => setAddZoneModal(false)} />}
+      </Modal>
     </div>
   );
 }

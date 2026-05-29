@@ -9,7 +9,7 @@ import LocationsScreen from './screens/locations';
 import StaffScreen from './screens/staff';
 import ReportsScreen from './screens/reports';
 import SettingsScreen from './screens/settings';
-import { ORDERS, MENU, CATEGORIES, STAFF } from '@/lib/data';
+import { ORDERS, MENU, CATEGORIES, STAFF, ZONES, TABLES } from '@/lib/data';
 
 export default function AppShell() {
   const [screen, setScreen]       = useState('dashboard');
@@ -17,6 +17,8 @@ export default function AppShell() {
   const [menu, setMenu]           = useState(MENU);
   const [categories, setCategories] = useState(CATEGORIES);
   const [staff, setStaff]         = useState(STAFF);
+  const [zones, setZones]         = useState(ZONES);
+  const [tables, setTables]       = useState(TABLES);
   const [openOrderId, setOpenOrderId] = useState(null);
   const [navOpen, setNavOpen]     = useState(false);
 
@@ -67,7 +69,15 @@ export default function AppShell() {
             />
           )}
           {screen === 'locations' && (
-            <LocationsScreen orders={orders} staff={staff} onNavigate={navigate} />
+            <LocationsScreen
+              orders={orders}
+              staff={staff}
+              zones={zones}
+              setZones={setZones}
+              tables={tables}
+              setTables={setTables}
+              onNavigate={navigate}
+            />
           )}
           {screen === 'staff' && (
             <StaffScreen staff={staff} setStaff={setStaff} />

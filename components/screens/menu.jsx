@@ -30,16 +30,46 @@ function MenuItemForm({ initial, categories, onSave, onCancel }) {
   );
 }
 
+const CATEGORY_ICONS = [
+  'Utensils','UtensilsCrossed','Soup','Salad','Flame','Cake','CupSoda','Coffee',
+  'Pizza','Sandwich','Fish','Beef','Egg','Apple','IceCream','Cookie','Wine','Beer',
+  'Milk','ChefHat','Leaf','Carrot','Wheat','Cherry','Lemon','Banana','Star','Drumstick',
+  'Candy','Popcorn','Grape','Croissant',
+];
+
 function CategoryForm({ onSave, onCancel }) {
-  const [name, setName] = useState('');
+  const [name, setName]   = useState('');
+  const [icon, setIcon]   = useState('Utensils');
+
   return (
     <div className="space-y-4">
       <Field label="Kategoriya nomi">
         <Input value={name} onChange={e => setName(e.target.value)} placeholder="masalan: Nonushta" />
       </Field>
+      <Field label="Icon tanlang">
+        <div className="grid grid-cols-8 gap-1.5 p-1">
+          {CATEGORY_ICONS.map(ic => (
+            <button key={ic} type="button" onClick={() => setIcon(ic)}
+              title={ic}
+              className={`w-full aspect-square flex items-center justify-center rounded-lg border transition ${
+                icon === ic
+                  ? 'bg-navy-700 text-white border-navy-700 shadow-sm'
+                  : 'bg-white text-ink-600 border-ink-200 hover:bg-ink-50 hover:border-accent/40'
+              }`}>
+              <Icon name={ic} size={18} />
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 flex items-center gap-2 px-1 text-[11px] text-ink-500">
+          <div className="w-6 h-6 rounded-md bg-navy-50 flex items-center justify-center">
+            <Icon name={icon} size={14} className="text-navy-700" />
+          </div>
+          Tanlangan: <span className="font-medium text-ink-700">{icon}</span>
+        </div>
+      </Field>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Bekor qilish</Button>
-        <Button variant="primary" icon="Check" onClick={() => onSave(name)} disabled={!name.trim()}>Qoʻshish</Button>
+        <Button variant="primary" icon="Check" onClick={() => onSave({ name, icon })} disabled={!name.trim()}>Qoʻshish</Button>
       </div>
     </div>
   );
@@ -70,8 +100,8 @@ export default function MenuScreen({ menu, setMenu, categories, setCategories })
 
   function deleteItem(id) { setMenu(list => list.filter(m => m.id !== id)); }
 
-  function addCategory(name) {
-    setCategories(list => [...list, { id: `c${Date.now()}`, name, short: name.slice(0, 12), icon: 'Utensils' }]);
+  function addCategory({ name, icon }) {
+    setCategories(list => [...list, { id: `c${Date.now()}`, name, short: name.slice(0, 12), icon }]);
     setCatModal(false);
   }
 
