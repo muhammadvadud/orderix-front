@@ -92,7 +92,7 @@ export default function TelegramForm({ onSuccess }) {
     if (digits.length !== 9) { setError('Telefon raqamni toʻliq kiriting'); return; }
     setLoading(true);
     try {
-      const data = await otpRequest('+998' + digits);
+      const data = await otpRequest('998' + digits);
       setDemoCode(data?.code || null);
       setResendIn(45);
       setStep('otp');
@@ -109,7 +109,7 @@ export default function TelegramForm({ onSuccess }) {
     setVerifying(true);
     try {
       const digits = phone.replace(/\D/g, '');
-      const data = await otpVerify('+998' + digits, code);
+      const data = await otpVerify('998' + digits, code);
       onSuccess({ ...data, method: 'telegram' });
     } catch (err) {
       setError(err.message || 'Kod notoʻgʻri');
