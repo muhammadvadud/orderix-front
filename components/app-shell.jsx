@@ -23,7 +23,7 @@ export default function AppShell() {
   const [navOpen, setNavOpen]     = useState(false);
 
   const user = { name: 'Aziza Karimova', role: 'Menejer', avatar: 'AK', color: '#1F4E79' };
-  const openCount = orders.filter(o => o.status === 'open' || o.status === 'in_progress').length;
+  const openCount = orders.filter(o => o.status === 'preparing').length;
 
   function navigate(s) {
     setNavOpen(false);

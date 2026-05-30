@@ -82,6 +82,9 @@ function ZoneForm({ onSave, onCancel }) {
 function TableForm({ zones, onSave, onCancel }) {
   const [zoneId, setZoneId] = useState(zones[0]?.id || '');
   const [seats, setSeats]   = useState(4);
+  const [count, setCount]   = useState(1);
+
+  const clampCount = n => Math.max(1, Math.min(99, n || 1));
 
   return (
     <div className="space-y-4">
@@ -110,12 +113,38 @@ function TableForm({ zones, onSave, onCancel }) {
           {seats} kishilik stol
         </div>
       </Field>
+      <Field label="Stollar soni" hint="Bir vaqtda nechta stol qoʻshilsin">
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setCount(c => clampCount(c - 1))}
+            className="w-10 h-10 shrink-0 rounded-lg border border-ink-200 bg-white text-ink-700 hover:bg-ink-50 inline-flex items-center justify-center transition">
+            <Icon name="Minus" size={16} />
+          </button>
+          <Input type="number" value={count} className="flex-1 text-center"
+            onChange={e => setCount(clampCount(parseInt(e.target.value, 10)))} />
+          <button type="button" onClick={() => setCount(c => clampCount(c + 1))}
+            className="w-10 h-10 shrink-0 rounded-lg border border-ink-200 bg-white text-ink-700 hover:bg-ink-50 inline-flex items-center justify-center transition">
+            <Icon name="Plus" size={16} />
+          </button>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {[1, 5, 10, 12, 15, 20].map(n => (
+            <button key={n} type="button" onClick={() => setCount(n)}
+              className={`px-2.5 h-7 rounded-md border text-xs font-medium transition ${
+                count === n
+                  ? 'bg-navy-700 text-white border-navy-700'
+                  : 'bg-white text-ink-600 border-ink-200 hover:bg-ink-50'
+              }`}>
+              {n} ta
+            </button>
+          ))}
+        </div>
+      </Field>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Bekor qilish</Button>
         <Button variant="primary" icon="Check"
-          onClick={() => onSave({ zoneId, seats })}
+          onClick={() => onSave({ zoneId, seats, count })}
           disabled={!zoneId}>
-          Qoʻshish
+          {count > 1 ? `${count} ta stol qoʻshish` : 'Qoʻshish'}
         </Button>
       </div>
     </div>
@@ -160,10 +189,6 @@ function TableCard({ table, zone, info, onClick }) {
             <span className="shrink-0">{timeAgo(order.time).replace(' oldin', '')}</span>
           </div>
         </div>
-      ) : info.status === 'reserved' ? (
-        <div className="mt-3 pt-3 border-t border-ink-100 pl-1.5 text-[11px] text-warn font-medium">
-          19:30 ga bron qilingan
-        </div>
       ) : info.status === 'dirty' ? (
         <div className="mt-3 pt-3 border-t border-ink-100 pl-1.5 text-[11px] text-ink-500">
           Mijozlar ketdi · tozalash kerak
@@ -177,7 +202,7 @@ function TableCard({ table, zone, info, onClick }) {
   );
 }
 
-function TableDetail({ table, zone, info, onClose, onMarkClean, onMarkReserved, onMarkFree, onNavigateOrders }) {
+function TableDetail({ table, zone, info, onClose, onMarkClean, onNavigateOrders }) {
   const meta = TABLE_STATUS_META[info.status];
   const order = info.order;
 
@@ -229,14 +254,8 @@ function TableDetail({ table, zone, info, onClose, onMarkClean, onMarkReserved, 
           <div className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2">Tezkor amallar</div>
           <div className="grid grid-cols-1 gap-2">
             <Button variant="primary" icon="Plus" fullWidth>Yangi buyurtma qabul qilish</Button>
-            {info.status !== 'reserved' && (
-              <Button variant="outline" icon="CalendarClock" fullWidth onClick={onMarkReserved}>Bron qilish</Button>
-            )}
             {info.status === 'dirty' && (
               <Button variant="success" icon="Sparkles" fullWidth onClick={onMarkClean}>Tozalash bajarildi</Button>
-            )}
-            {info.status === 'reserved' && (
-              <Button variant="outline" icon="X" fullWidth onClick={onMarkFree}>Bronni bekor qilish</Button>
             )}
           </div>
         </div>
@@ -296,7 +315,6 @@ export default function LocationsScreen({ orders, staff, zones, setZones, tables
     all:      tablesWithInfo.length,
     free:     tablesWithInfo.filter(x => x.info.status === 'free').length,
     occupied: tablesWithInfo.filter(x => x.info.status === 'occupied').length,
-    reserved: tablesWithInfo.filter(x => x.info.status === 'reserved').length,
     dirty:    tablesWithInfo.filter(x => x.info.status === 'dirty').length,
   };
 
@@ -312,11 +330,15 @@ export default function LocationsScreen({ orders, staff, zones, setZones, tables
     setAddZoneModal(false);
   }
 
-  function handleAddTable({ zoneId, seats }) {
-    const zone = zones.find(z => z.id === zoneId);
+  function handleAddTable({ zoneId, seats, count = 1 }) {
     const inZone = tables.filter(t => t.zoneId === zoneId);
-    const nextNumber = inZone.length > 0 ? Math.max(...inZone.map(t => t.number)) + 1 : 1;
-    setTables(list => [...list, { id: `t${Date.now()}`, zoneId, number: nextNumber, seats }]);
+    let nextNumber = inZone.length > 0 ? Math.max(...inZone.map(t => t.number)) + 1 : 1;
+    const stamp = Date.now();
+    const added = [];
+    for (let i = 0; i < count; i++) {
+      added.push({ id: `t${stamp}-${i}`, zoneId, number: nextNumber++, seats });
+    }
+    setTables(list => [...list, ...added]);
     setAddTableModal(false);
   }
 
@@ -341,11 +363,10 @@ export default function LocationsScreen({ orders, staff, zones, setZones, tables
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-5">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-5">
         {[
           { key: 'free',     label: 'Boʻsh',         color: '#27AE60', n: totals.free },
           { key: 'occupied', label: 'Band',          color: '#2E75B6', n: totals.occupied },
-          { key: 'reserved', label: 'Bron qilingan', color: '#F39C12', n: totals.reserved },
           { key: 'dirty',    label: 'Yigʻish kerak', color: '#8a93a3', n: totals.dirty },
         ].map(s => (
           <Card key={s.key} className="!p-3 sm:!p-4">
@@ -395,7 +416,6 @@ export default function LocationsScreen({ orders, staff, zones, setZones, tables
           { v: 'all', label: 'Hammasi', dot: '#8a93a3' },
           { v: 'free', label: 'Boʻsh', dot: '#27AE60' },
           { v: 'occupied', label: 'Band', dot: '#2E75B6' },
-          { v: 'reserved', label: 'Bron qilingan', dot: '#F39C12' },
           { v: 'dirty', label: 'Yigʻish kerak', dot: '#8a93a3' },
         ].map(s => {
           const active = statusFilter === s.v;
@@ -477,8 +497,6 @@ export default function LocationsScreen({ orders, staff, zones, setZones, tables
           onClose={() => setOpenTableId(null)}
           onNavigateOrders={() => onNavigate && onNavigate('orders')}
           onMarkClean={() => { setStatus(openEntry.table.id, 'free'); setOpenTableId(null); }}
-          onMarkReserved={() => { setStatus(openEntry.table.id, 'reserved'); setOpenTableId(null); }}
-          onMarkFree={() => { setStatus(openEntry.table.id, 'free'); setOpenTableId(null); }}
         />}
       </Drawer>
 

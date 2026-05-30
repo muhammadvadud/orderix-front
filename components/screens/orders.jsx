@@ -6,16 +6,170 @@ import {
   PageHeader, EmptyRow, EmptyState, Drawer,
 } from '../ui';
 import {
-  STAFF, STATUSES, STATUS_META,
+  STAFF, STATUSES, STATUS_META, ITEM_STATUS_META, MENU, CATEGORIES,
   formatUZS, formatUZSShort, formatTime, formatDate, timeAgo,
 } from '@/lib/data';
 
-function OrderDetail({ order, onChangeStatus }) {
+function OrderDetail({ order, onChangeStatus, onEdit, onChangeItemStatus }) {
+  const [editMode, setEditMode] = useState(false);
+  const [editItems, setEditItems] = useState([]);
+  const [activeCat, setActiveCat] = useState(CATEGORIES[0]?.id || '');
+
+  const canEdit = order.status !== 'cancelled' && order.status !== 'closed';
+
+  function startEdit() {
+    setEditItems(order.items.map(it => ({ ...it })));
+    setActiveCat(CATEGORIES[0]?.id || '');
+    setEditMode(true);
+  }
+  function cancelEdit() { setEditMode(false); setEditItems([]); }
+
+  function changeQty(menuId, menuName, menuPrice, delta) {
+    setEditItems(prev => {
+      const idx = prev.findIndex(it => it.menuId === menuId);
+      if (idx === -1 && delta > 0) {
+        return [...prev, { id: `${menuId}-new`, menuId, name: menuName, qty: 1, price: menuPrice }];
+      }
+      if (idx === -1) return prev;
+      const arr = [...prev];
+      const nq = arr[idx].qty + delta;
+      if (nq <= 0) arr.splice(idx, 1);
+      else arr[idx] = { ...arr[idx], qty: nq };
+      return arr;
+    });
+  }
+
+  function saveEdit() {
+    if (editItems.length === 0) return;
+    onEdit(order.id, editItems);
+    setEditMode(false);
+  }
+
+  const editSubtotal   = editItems.reduce((s, it) => s + it.price * it.qty, 0);
+  const editServiceFee = Math.round(editSubtotal * 0.1);
+  const editTotal      = editSubtotal + editServiceFee;
+
+  if (editMode) {
+    return (
+      <div className="p-4 sm:p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-semibold text-ink-800">Buyurtmani tahrirlash</div>
+          <button onClick={cancelEdit} className="text-xs font-medium text-ink-500 hover:text-ink-700 flex items-center gap-1">
+            <Icon name="X" size={12} /> Bekor qilish
+          </button>
+        </div>
+
+        {/* Current items with qty controls */}
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2">
+            Tarkibdagi taomlar
+          </div>
+          <div className="rounded-lg border border-ink-100 overflow-hidden">
+            {editItems.length === 0 && (
+              <div className="px-4 py-5 text-center text-sm text-ink-400">
+                Hech qanday taom qoʻshilmagan
+              </div>
+            )}
+            {editItems.map((it, i) => (
+              <div key={it.menuId} className={`flex items-center gap-3 px-3.5 py-2.5 ${i > 0 ? 'border-t border-ink-100' : ''}`}>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-ink-900 truncate">{it.name}</div>
+                  <div className="text-[11px] text-ink-500 num">{formatUZSShort(it.price * it.qty)} soʻm</div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <IconButton name="Minus" label="−" size={28} variant="outline" onClick={() => changeQty(it.menuId, it.name, it.price, -1)} />
+                  <span className="text-sm font-bold num w-6 text-center">{it.qty}</span>
+                  <IconButton name="Plus"  label="+" size={28} variant="outline" onClick={() => changeQty(it.menuId, it.name, it.price, +1)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Add from menu */}
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2">
+            Taom qoʻshish
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-2.5 pb-0.5">
+            {CATEGORIES.map(c => (
+              <button key={c.id} onClick={() => setActiveCat(c.id)}
+                className={`shrink-0 px-2.5 py-1.5 rounded-full text-[11px] font-medium border transition whitespace-nowrap flex items-center gap-1 ${
+                  activeCat === c.id
+                    ? 'bg-navy-700 text-white border-navy-700'
+                    : 'bg-white text-ink-600 border-ink-200 hover:bg-ink-50'
+                }`}>
+                <Icon name={c.icon} size={10} />
+                {c.short}
+              </button>
+            ))}
+          </div>
+          <div className="space-y-1.5">
+            {MENU.filter(m => m.category === activeCat).map(m => {
+              const q = editItems.find(it => it.menuId === m.id)?.qty || 0;
+              return (
+                <div key={m.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-ink-100 bg-white">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-ink-800 truncate">{m.name}</div>
+                    <div className="text-[11px] num text-ink-500">{formatUZSShort(m.price)} soʻm</div>
+                  </div>
+                  {q === 0 ? (
+                    <Button variant="soft" size="sm" icon="Plus"
+                      onClick={() => changeQty(m.id, m.name, m.price, +1)}>
+                      Qoʻshish
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <IconButton name="Minus" label="−" size={26} variant="outline" onClick={() => changeQty(m.id, m.name, m.price, -1)} />
+                      <span className="text-sm font-bold num w-6 text-center">{q}</span>
+                      <IconButton name="Plus"  label="+" size={26} variant="outline" onClick={() => changeQty(m.id, m.name, m.price, +1)} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Updated total */}
+        <div className="rounded-lg bg-navy-50/60 border border-navy-100 p-3.5 space-y-1.5">
+          <div className="flex justify-between text-sm">
+            <span className="text-ink-600">Oraliq summa</span>
+            <span className="num text-ink-900">{formatUZS(editSubtotal)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-ink-600">Xizmat haqi (10%)</span>
+            <span className="num text-ink-900">{formatUZS(editServiceFee)}</span>
+          </div>
+          <div className="h-px bg-navy-100" />
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm font-semibold text-ink-700">Jami</span>
+            <span className="num text-lg font-bold text-navy-800">{formatUZS(editTotal)}</span>
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <Button variant="outline" fullWidth onClick={cancelEdit}>Bekor qilish</Button>
+          <Button variant="primary" icon="Check" fullWidth onClick={saveEdit} disabled={editItems.length === 0}>
+            Saqlash
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-5 space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <Badge status={order.status} />
-        <div className="text-xs text-ink-500">{formatDate(order.time)} · {formatTime(order.time)}</div>
+        <div className="flex items-center gap-2">
+          {canEdit && (
+            <Button variant="outline" size="sm" icon="Pencil" onClick={startEdit}>
+              Tahrirlash
+            </Button>
+          )}
+          <div className="text-xs text-ink-500">{formatDate(order.time)} · {formatTime(order.time)}</div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -57,20 +211,43 @@ function OrderDetail({ order, onChangeStatus }) {
       </div>
 
       <div>
-        <div className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2">Taomlar ({order.itemCount})</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2">
+          Taomlar ({order.itemCount})
+        </div>
         <div className="rounded-lg border border-ink-100 overflow-hidden">
-          {order.items.map((it, i) => (
-            <div key={it.id} className={`flex items-center justify-between px-3.5 py-3 ${i > 0 ? 'border-t border-ink-100' : ''}`}>
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-md bg-ink-100 text-ink-500 text-xs font-bold inline-flex items-center justify-center num shrink-0">×{it.qty}</div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-ink-900 truncate">{it.name}</div>
-                  <div className="text-[11px] text-ink-500 num">{formatUZS(it.price)} / dona</div>
+          {order.items.map((it, i) => {
+            const itemMeta = ITEM_STATUS_META[it.status || 'preparing'];
+            return (
+              <div key={it.id} className={`px-3.5 py-2.5 ${i > 0 ? 'border-t border-ink-100' : ''}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 rounded-md bg-ink-100 text-ink-500 text-xs font-bold inline-flex items-center justify-center num shrink-0">×{it.qty}</div>
+                    <div className="min-w-0">
+                      <div className={`text-sm font-medium truncate ${it.status === 'cancelled' ? 'line-through text-ink-400' : 'text-ink-900'}`}>{it.name}</div>
+                      <div className="text-[11px] text-ink-500 num">{formatUZS(it.price)} / dona</div>
+                    </div>
+                  </div>
+                  <div className="text-sm num font-semibold text-ink-900 whitespace-nowrap shrink-0">{formatUZSShort(it.price * it.qty)}</div>
+                </div>
+                {/* Per-item status buttons */}
+                <div className="flex gap-1 mt-2">
+                  {Object.entries(ITEM_STATUS_META).map(([key, meta]) => (
+                    <button key={key}
+                      onClick={() => onChangeItemStatus(order.id, it.id, key)}
+                      className="flex-1 py-1 rounded-md text-[10.5px] font-semibold border transition inline-flex items-center justify-center gap-1"
+                      style={it.status === key
+                        ? { background: meta.dot, color: '#fff', borderColor: meta.dot }
+                        : { background: '#f8fafc', color: '#64748b', borderColor: '#e2e8f0' }
+                      }>
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: it.status === key ? '#fff' : meta.dot }} />
+                      {meta.short}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="text-sm num font-semibold text-ink-900 whitespace-nowrap">{formatUZSShort(it.price * it.qty)}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -140,10 +317,39 @@ export default function OrdersScreen({ orders, setOrders, openOrderId, setOpenOr
   }
 
   function updateStatus(id, newStatus) {
-    setOrders(list => list.map(o => o.id === id ? { ...o, status: newStatus } : o));
+    setOrders(list => list.map(o => {
+      if (o.id !== id) return o;
+      const items = newStatus !== 'closed'
+        ? o.items.map(it => it.status !== 'cancelled' ? { ...it, status: newStatus } : it)
+        : o.items;
+      return { ...o, status: newStatus, items };
+    }));
   }
-  function cancelOrder(id) {
-    setOrders(list => list.map(o => o.id === id ? { ...o, status: 'cancelled' } : o));
+  function closeOrder(id) {
+    setOrders(list => list.map(o => o.id === id ? { ...o, status: 'closed' } : o));
+  }
+  function changeItemStatus(orderId, itemId, newStatus) {
+    setOrders(list => list.map(o => {
+      if (o.id !== orderId) return o;
+      const newItems = o.items.map(it => it.id === itemId ? { ...it, status: newStatus } : it);
+      const allDone     = newItems.every(it => it.status !== 'preparing');
+      const anyDelivered = newItems.some(it => it.status === 'delivered');
+      const autoStatus  = (allDone && anyDelivered && o.status === 'preparing') ? 'delivered' : o.status;
+      return { ...o, items: newItems, status: autoStatus };
+    }));
+  }
+  function editOrder(id, newItems) {
+    setOrders(list => list.map(o => {
+      if (o.id !== id) return o;
+      const existingSt = {};
+      o.items.forEach(it => { existingSt[it.menuId] = it.status || 'preparing'; });
+      const updated    = newItems.map(it => ({ ...it, status: existingSt[it.menuId] || 'preparing' }));
+      const subtotal   = updated.reduce((s, it) => s + it.price * it.qty, 0);
+      const serviceFee = Math.round(subtotal * 0.1);
+      const total      = subtotal + serviceFee;
+      const itemCount  = updated.reduce((s, it) => s + it.qty, 0);
+      return { ...o, items: updated, subtotal, serviceFee, total, itemCount };
+    }));
   }
 
   function SortHeader({ k, children, align = 'left' }) {
@@ -263,26 +469,48 @@ export default function OrdersScreen({ orders, setOrders, openOrderId, setOpenOr
         {filtered.length === 0 ? (
           <Card><EmptyState icon="SearchX" text="Hech qanday buyurtma topilmadi" /></Card>
         ) : filtered.slice(0, 60).map(o => (
-          <button key={o.id} onClick={() => setOpenOrderId(o.id)}
-            className="w-full bg-white rounded-xl border border-ink-100 shadow-card p-3.5 flex items-center gap-3 text-left active:bg-ink-50 transition">
-            <Avatar initials={o.waiterAvatar} color={o.waiterColor} size={40} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-semibold text-ink-900 text-sm">{o.number}</span>
-                <span className="text-[11px] text-ink-500 truncate">{o.zoneShort} · {o.tableNumber}-stol</span>
+          <div key={o.id}
+            className="w-full bg-white rounded-xl border border-ink-100 shadow-card text-left active:bg-ink-50/50 transition overflow-hidden">
+            <div className="p-3.5 flex items-center gap-3 cursor-pointer" onClick={() => setOpenOrderId(o.id)}>
+              <Avatar initials={o.waiterAvatar} color={o.waiterColor} size={40} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-semibold text-ink-900 text-sm">{o.number}</span>
+                  <span className="text-[11px] text-ink-500 truncate">{o.zoneShort} · {o.tableNumber}-stol</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge status={o.status} size="sm" />
+                  <span className="text-[11px] text-ink-500">{o.itemCount} ta</span>
+                  <span className="text-[11px] text-ink-300">·</span>
+                  <span className="text-[11px] text-ink-500">{o.waiter.split(' ')[0]}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge status={o.status} size="sm" />
-                <span className="text-[11px] text-ink-500">{o.itemCount} ta</span>
-                <span className="text-[11px] text-ink-300">·</span>
-                <span className="text-[11px] text-ink-500">{o.waiter.split(' ')[0]}</span>
+              <div className="text-right shrink-0">
+                <div className="num font-bold text-ink-900 text-sm whitespace-nowrap">{formatUZSShort(o.total)}</div>
+                <div className="text-[10.5px] text-ink-400 mt-0.5">{formatTime(o.time)}</div>
               </div>
             </div>
-            <div className="text-right shrink-0">
-              <div className="num font-bold text-ink-900 text-sm whitespace-nowrap">{formatUZSShort(o.total)}</div>
-              <div className="text-[10.5px] text-ink-400 mt-0.5">{formatTime(o.time)}</div>
-            </div>
-          </button>
+            {o.status !== 'closed' && (
+              <div className="flex gap-2 px-3.5 pb-3 pt-1">
+                {o.status !== 'delivered' && (
+                  <button
+                    onClick={() => updateStatus(o.id, 'delivered')}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-white transition active:scale-[.97]"
+                    style={{ background: '#27AE60', boxShadow: '0 1px 3px rgba(39,174,96,.35)' }}>
+                    <Icon name="CheckCircle" size={14} />
+                    Yetkazildi
+                  </button>
+                )}
+                <button
+                  onClick={() => updateStatus(o.id, 'closed')}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-white transition active:scale-[.97]"
+                  style={{ background: '#64748b', boxShadow: '0 1px 3px rgba(100,116,139,.35)' }}>
+                  <Icon name="CheckSquare" size={14} />
+                  Tugatildi
+                </button>
+              </div>
+            )}
+          </div>
         ))}
       </div>
 
@@ -328,8 +556,28 @@ export default function OrdersScreen({ orders, setOrders, openOrderId, setOpenOr
                     {formatTime(o.time)}
                     <div className="text-[10px] text-ink-400">{timeAgo(o.time)}</div>
                   </td>
-                  <td className="px-3 py-3 text-right">
-                    <Icon name="ChevronRight" size={16} className="text-ink-300 inline" />
+                  <td className="px-3 py-3 text-right" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-1.5">
+                      {o.status !== 'delivered' && o.status !== 'closed' && (
+                        <button
+                          onClick={() => updateStatus(o.id, 'delivered')}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-white transition hover:opacity-90 whitespace-nowrap"
+                          style={{ background: '#27AE60', boxShadow: '0 1px 3px rgba(39,174,96,.4)' }}>
+                          <Icon name="CheckCircle" size={12} />
+                          Yetkazildi
+                        </button>
+                      )}
+                      {o.status !== 'closed' && (
+                        <button
+                          onClick={() => updateStatus(o.id, 'closed')}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-white transition hover:opacity-90 whitespace-nowrap"
+                          style={{ background: '#64748b', boxShadow: '0 1px 3px rgba(100,116,139,.4)' }}>
+                          <Icon name="CheckSquare" size={12} />
+                          Tugatildi
+                        </button>
+                      )}
+                      <Icon name="ChevronRight" size={14} className="text-ink-300 inline ml-0.5" />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -354,13 +602,13 @@ export default function OrdersScreen({ orders, setOrders, openOrderId, setOpenOr
         footer={open && (
           <>
             <Button variant="outline" icon="Printer">Chop etish</Button>
-            {open.status !== 'cancelled' && open.status !== 'closed' && (
-              <Button variant="danger" icon="Ban" onClick={() => cancelOrder(open.id)}>Bekor qilish</Button>
+            {open.status !== 'closed' && (
+              <Button variant="primary" icon="CheckSquare" onClick={() => closeOrder(open.id)}>Yopish</Button>
             )}
           </>
         )}
       >
-        {open && <OrderDetail order={open} onChangeStatus={(s) => updateStatus(open.id, s)} />}
+        {open && <OrderDetail order={open} onChangeStatus={(s) => updateStatus(open.id, s)} onEdit={editOrder} onChangeItemStatus={changeItemStatus} />}
       </Drawer>
     </div>
   );

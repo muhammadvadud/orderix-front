@@ -1,13 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html, body, #__next { height: 100%; }
 body {
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-inter, 'Inter', ui-sans-serif, system-ui, sans-serif);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   color: #0e1320;
   background: #f7f8fa;
 }
@@ -34,6 +33,12 @@ body {
 .anim-sheet       { animation: sheetIn .28s cubic-bezier(.2,.8,.2,1); }
 .anim-fade        { animation: fadeIn .18s ease-out; }
 .anim-pop         { animation: popIn .2s cubic-bezier(.2,.8,.2,1); }
+
+/* Responsive drawer panel: slides up on mobile, slides in from right on desktop */
+.drawer-panel { animation: slideUp .28s cubic-bezier(.2,.8,.2,1); }
+@media (min-width: 640px) {
+  .drawer-panel { width: var(--drawer-width, 480px); animation: slideInRight .26s cubic-bezier(.2,.8,.2,1); }
+}
 
 /* Safer mobile tap */
 button, [role="button"] { -webkit-tap-highlight-color: transparent; }

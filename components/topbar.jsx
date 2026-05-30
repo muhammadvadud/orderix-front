@@ -7,7 +7,7 @@ const SCREEN_LABELS = {
   dashboard: 'Bosh sahifa',
   orders: 'Buyurtmalar',
   menu: 'Menyu',
-  locations: 'Filiallar',
+  locations: 'Joylar',
   staff: 'Xodimlar',
   reports: 'Hisobotlar',
   settings: 'Sozlamalar',

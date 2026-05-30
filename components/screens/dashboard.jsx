@@ -8,17 +8,34 @@ import {
 
 function StatCard({ icon, iconBg, iconFg, label, value, trend, sub }) {
   return (
-    <Card className="relative overflow-hidden !p-4 sm:!p-5">
-      <div className="flex items-start justify-between">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center" style={{ background: iconBg, color: iconFg }}>
-          <Icon name={icon} size={18} />
+    <Card className="!p-3.5 sm:!p-5">
+      {/* Mobile: horizontal compact layout */}
+      <div className="flex sm:hidden items-center gap-3">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+             style={{ background: iconBg, color: iconFg }}>
+          <Icon name={icon} size={20} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs text-ink-500 font-medium leading-tight">{label}</div>
+          <div className="text-2xl font-bold text-ink-900 num leading-tight mt-0.5">{value}</div>
+          {sub && <div className="text-[10.5px] text-ink-400 truncate mt-0.5">{sub}</div>}
         </div>
         <Trend value={trend} />
       </div>
-      <div className="mt-3 sm:mt-4">
-        <div className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-ink-400">{label}</div>
-        <div className="mt-1 text-xl sm:text-3xl font-bold text-ink-900 num tracking-tight leading-tight">{value}</div>
-        {sub && <div className="mt-1 text-[10.5px] sm:text-xs text-ink-500 truncate">{sub}</div>}
+      {/* Desktop: vertical layout */}
+      <div className="hidden sm:block">
+        <div className="flex items-start justify-between">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+               style={{ background: iconBg, color: iconFg }}>
+            <Icon name={icon} size={18} />
+          </div>
+          <Trend value={trend} />
+        </div>
+        <div className="mt-4">
+          <div className="text-xs font-medium uppercase tracking-wider text-ink-400">{label}</div>
+          <div className="mt-1 text-3xl font-bold text-ink-900 num tracking-tight leading-tight">{value}</div>
+          {sub && <div className="mt-1 text-xs text-ink-500 truncate">{sub}</div>}
+        </div>
       </div>
     </Card>
   );
@@ -180,8 +197,8 @@ function ActivityFeed({ orders }) {
 
 export default function DashboardScreen({ orders, onOpenOrder, onNavigate }) {
   const today = orders;
-  const openCount = today.filter(o => o.status === 'open' || o.status === 'in_progress').length;
-  const revenue = today.filter(o => o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
+  const openCount = today.filter(o => o.status === 'preparing').length;
+  const revenue = today.filter(o => o.status !== 'preparing').reduce((s, o) => s + o.total, 0);
   const waiterIds = new Set(today.map(o => o.waiterId));
   const topItems = topItemsToday(orders).slice(0, 5);
 
@@ -203,17 +220,17 @@ export default function DashboardScreen({ orders, onOpenOrder, onNavigate }) {
         <p className="text-xs text-ink-500 mt-0.5">Bugun restoranlaringizdagi vaziyat.</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard icon="Receipt" iconBg="#d7e7f4" iconFg="#1F4E79"
           label="Bugungi buyurtmalar" value={today.length} trend={12} sub="kechaga nisbatan" />
         <StatCard icon="Clock" iconBg="#fdf1de" iconFg="#8a5a07"
-          label="Ochiq buyurtmalar" value={openCount} trend={-4}
-          sub={`${today.filter(o => o.status === 'open').length} yangi · ${today.filter(o => o.status === 'in_progress').length} oshxonada`} />
+          label="Tayyorlanmoqda" value={openCount} trend={-4}
+          sub={`${today.filter(o => o.status === 'delivered').length} yetkazildi · ${today.filter(o => o.status === 'closed').length} yopildi`} />
         <StatCard icon="Wallet" iconBg="#e6f6ec" iconFg="#1d7a44"
           label="Bugungi tushum" value={formatUZSShort(revenue)} trend={8.4} sub="soʻm · sof tushum" />
         <StatCard icon="Users" iconBg="#1F4E790F" iconFg="#1F4E79"
           label="Faol ofitsiantlar" value={waiterIds.size} trend={0}
-          sub={`${STAFF.filter(s => s.role === 'Ofitsiant').length} ta smenada`} />
+          sub={`${STAFF.filter(s => s.role === 'Ofitsiant').length} ta ofitsiant`} />
       </div>
 
       <div className="md:hidden mt-4 grid grid-cols-2 gap-3">
@@ -221,12 +238,9 @@ export default function DashboardScreen({ orders, onOpenOrder, onNavigate }) {
         <Button variant="outline" icon="Download" fullWidth>Eksport</Button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-4">
-        <div className="xl:col-span-2 space-y-4">
-          <LiveOrdersTable orders={today} onOpen={onOpenOrder} onNavigate={onNavigate} />
-          <ActivityFeed orders={today} />
-        </div>
-        <div className="space-y-4">
+      <div className="flex flex-col xl:grid xl:grid-cols-3 gap-4 mt-4">
+        {/* Right column — comes first on mobile for quick overview */}
+        <div className="space-y-4 xl:order-2">
           <TopItemsWidget items={topItems} />
           <Card>
             <div className="flex items-center justify-between mb-4">
@@ -235,7 +249,26 @@ export default function DashboardScreen({ orders, onOpenOrder, onNavigate }) {
                 <p className="text-xs text-ink-500 mt-0.5">Jonli taqsimot</p>
               </div>
             </div>
-            <div className="space-y-3">
+            {/* Mobile: colored tiles grid */}
+            <div className="grid grid-cols-2 gap-2 sm:hidden">
+              {STATUSES.map(s => {
+                const count = today.filter(o => o.status === s).length;
+                const pct = today.length ? (count / today.length) * 100 : 0;
+                const meta = STATUS_META[s];
+                return (
+                  <div key={s} className="rounded-xl p-3" style={{ background: meta.bg }}>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: meta.dot }} />
+                      <span className="text-[11px] font-medium leading-tight" style={{ color: meta.fg }}>{meta.label}</span>
+                    </div>
+                    <div className="text-2xl font-bold num leading-none" style={{ color: meta.fg }}>{count}</div>
+                    <div className="text-[11px] mt-1 font-medium opacity-70" style={{ color: meta.fg }}>{pct.toFixed(0)}%</div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Desktop: progress bars */}
+            <div className="hidden sm:block space-y-3">
               {STATUSES.map(s => {
                 const count = today.filter(o => o.status === s).length;
                 const pct = today.length ? (count / today.length) * 100 : 0;
@@ -257,6 +290,11 @@ export default function DashboardScreen({ orders, onOpenOrder, onNavigate }) {
               })}
             </div>
           </Card>
+        </div>
+        {/* Left column — main content */}
+        <div className="xl:col-span-2 space-y-4 xl:order-1">
+          <LiveOrdersTable orders={today} onOpen={onOpenOrder} onNavigate={onNavigate} />
+          <ActivityFeed orders={today} />
         </div>
       </div>
     </div>

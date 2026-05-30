@@ -9,12 +9,17 @@ import {
 import {
   WAITER, TABLES, CATEGORIES, MENU, SERVICE_RATE,
   findItem, orderSubtotal, orderTotal, orderItemCount,
-  formatSoum, minutesAgo, STATUS_META, nextAction, WAITER_COLORS,
+  formatSoum, minutesAgo, STATUS_META, ITEM_STATUS_META, nextAction, WAITER_COLORS,
 } from '../../lib/waiter-data';
 
 const { NAVY, ACCENT } = WAITER_COLORS;
 
 const CATEGORY_ICON_MAP = { Wheat, Flame, Salad, Utensils, CupSoda, IceCream };
+
+// Narxni "112 000" ko'rinishida formatlash
+function fmt(n) {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
 
 // ─── Shared bits ─────────────────────────────────
 
@@ -78,30 +83,32 @@ function CategoryGlyph({ cat }) {
 // ─── MY ORDERS ───────────────────────────────────
 
 export function MyOrdersScreen({ orders, onAdvance, onOpen, onGoNew }) {
-  const active = orders.filter(o => o.status !== 'closed');
+  const activeCount = orders.filter(o => o.status !== 'closed').length;
   const counts = {
-    all:       active.length,
-    preparing: active.filter(o => o.status === 'preparing').length,
-    ready:     active.filter(o => o.status === 'ready').length,
-    served:    active.filter(o => o.status === 'served').length,
+    all:       activeCount,
+    preparing: orders.filter(o => o.status === 'preparing').length,
+    delivered: orders.filter(o => o.status === 'delivered').length,
+    closed:    orders.filter(o => o.status === 'closed').length,
   };
   const [filter, setFilter] = useState('all');
-  const list = active.filter(o => filter === 'all' ? true : o.status === filter);
+  const list = filter === 'all'
+    ? orders.filter(o => o.status !== 'closed')
+    : orders.filter(o => o.status === filter);
 
   return (
     <div className="pb-6">
       <SectionHeader
-        title="My Orders"
-        sub={`${WAITER.name} · ${counts.all} active`}
+        title="Buyurtmalarim"
+        sub={`${WAITER.name} · ${activeCount} ta faol`}
         right={<IconBtn className="md:hidden"><Bell size={18} /></IconBtn>}
       />
 
       <div className="px-5 md:px-8 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
         {[
-          { id: 'all',       label: 'All',       c: counts.all },
-          { id: 'preparing', label: 'Preparing', c: counts.preparing },
-          { id: 'ready',     label: 'Ready',     c: counts.ready },
-          { id: 'served',    label: 'Served',    c: counts.served },
+          { id: 'all',       label: 'Barchasi',       c: counts.all },
+          { id: 'preparing', label: 'Tayyorlanmoqda', c: counts.preparing },
+          { id: 'delivered', label: 'Yetkazildi',     c: counts.delivered },
+          { id: 'closed',    label: 'Tugatildi',      c: counts.closed },
         ].map(f => {
           const on = filter === f.id;
           return (
@@ -123,7 +130,9 @@ export function MyOrdersScreen({ orders, onAdvance, onOpen, onGoNew }) {
       </div>
 
       {list.length === 0 ? (
-        <EmptyOrders onGoNew={onGoNew} />
+        filter === 'closed'
+          ? <div className="px-6 mt-10 text-center text-[14px] text-slate-500">Tugatilgan buyurtmalar yo'q</div>
+          : <EmptyOrders onGoNew={onGoNew} />
       ) : (
         <div className="px-4 md:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {list.map(o => <OrderCard key={o.id} order={o} onAdvance={onAdvance} onOpen={onOpen} />)}
@@ -149,17 +158,17 @@ function OrderCard({ order, onAdvance, onOpen }) {
             <div className="mt-2"><StatusBadge status={order.status} /></div>
           </div>
           <div className="text-right">
-            <div className="text-[18px] font-extrabold text-slate-900 leading-none tabular-nums">
-              {(total / 1000).toFixed(0)}<span className="text-[11px] font-semibold text-slate-500 ml-0.5">k</span>
+            <div className="text-[16px] font-extrabold text-slate-900 leading-none tabular-nums">
+              {fmt(total)}
             </div>
             <div className="text-[11px] text-slate-500 mt-1 tabular-nums">UZS</div>
           </div>
         </div>
 
         <div className="mt-3 flex items-center gap-3 text-[12px] text-slate-500">
-          <span className="inline-flex items-center gap-1"><Inbox size={13} /> {itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+          <span className="inline-flex items-center gap-1"><Inbox size={13} /> {itemCount} ta taom</span>
           <span className="h-1 w-1 rounded-full bg-slate-300" />
-          <span className="inline-flex items-center gap-1"><Clock size={13} /> {minutesAgo(order.createdAt)}</span>
+          <span suppressHydrationWarning className="inline-flex items-center gap-1"><Clock size={13} /> {minutesAgo(order.createdAt)}</span>
         </div>
       </button>
 
@@ -174,29 +183,28 @@ function OrderCard({ order, onAdvance, onOpen }) {
             );
           })}
           {order.items.length > 2 && (
-            <div className="text-slate-400 mt-0.5">+ {order.items.length - 2} more</div>
+            <div className="text-slate-400 mt-0.5">+ {order.items.length - 2} ta yana</div>
           )}
         </div>
       </div>
 
       {action && (
-        <button
-          onClick={() => onAdvance(order.id)}
-          className="tap w-full h-12 grid place-items-center font-semibold text-[14px] border-t"
-          style={{
-            color: order.status === 'ready' ? '#fff' : (order.status === 'served' ? '#fff' : NAVY),
-            background:
-              order.status === 'ready' ? '#10b981' :
-              order.status === 'served' ? NAVY : '#fff',
-            borderColor: '#eef2f7',
-          }}>
-          <span className="inline-flex items-center gap-2">
-            {order.status === 'ready'  ? <ChefHat size={16}/> :
-             order.status === 'served' ? <CheckCircle size={16}/> :
-             <ArrowRight size={16}/>}
-            {action.label}
-          </span>
-        </button>
+        <div className="flex gap-2 px-3 pb-3">
+          <button
+            onClick={() => onAdvance(order.id)}
+            className="tap flex-1 h-11 rounded-xl font-semibold text-[13px] inline-flex items-center justify-center gap-2 text-white"
+            style={{
+              background: order.status === 'preparing' ? '#27AE60' : NAVY,
+              boxShadow: order.status === 'preparing'
+                ? '0 2px 8px rgba(39,174,96,.4)'
+                : `0 2px 8px ${NAVY}66`,
+            }}>
+            {order.status === 'preparing'
+              ? <><CheckCircle size={15}/> Yetkazildi</>
+              : <><CheckCircle size={15}/> Tugatildi</>
+            }
+          </button>
+        </div>
       )}
     </div>
   );
@@ -223,14 +231,14 @@ function EmptyOrders({ onGoNew }) {
           <path d="M138 138 l8 8 l14 -16" stroke="#fff" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </div>
-      <h3 className="mt-2 text-[18px] font-bold text-slate-900">All caught up</h3>
+      <h3 className="mt-2 text-[18px] font-bold text-slate-900">Hammasi bajarildi</h3>
       <p className="mt-1 text-[13px] text-slate-500 max-w-[260px]">
-        You have no active orders in this view. Take a new order whenever a guest is ready.
+        Ushbu koʻrinishda faol buyurtmalar yoʻq. Mehmon tayyor boʻlganda yangi buyurtma qabul qiling.
       </p>
       <button onClick={onGoNew}
         className="tap mt-5 h-12 px-5 rounded-2xl text-white font-semibold inline-flex items-center gap-2"
         style={{ background: NAVY }}>
-        <Plus size={18} /> New order
+        <Plus size={18} /> Yangi buyurtma
       </button>
     </div>
   );
@@ -238,73 +246,279 @@ function EmptyOrders({ onGoNew }) {
 
 // ─── ORDER DETAIL SHEET ──────────────────────────
 
-export function OrderDetailSheet({ order, onClose, onAdvance }) {
+export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeItemStatus, readOnly = false }) {
+  const [editMode, setEditMode] = useState(false);
+  const [editItems, setEditItems] = useState([]);
+  const [addCat, setAddCat] = useState(CATEGORIES[0]?.id);
+
   if (!order) return null;
-  const sub = orderSubtotal(order);
-  const svc = Math.round(sub * SERVICE_RATE);
-  const tot = sub + svc;
-  const action = nextAction(order.status);
+
+  const canEdit = !readOnly && order.status !== 'closed';
+  const action  = readOnly ? null : nextAction(order.status);
+
+  function startEdit() {
+    setEditItems(order.items.map(it => ({ ...it })));
+    setAddCat(CATEGORIES[0]?.id);
+    setEditMode(true);
+  }
+  function cancelEdit() { setEditMode(false); setEditItems([]); }
+
+  function changeQty(menuId, delta) {
+    setEditItems(prev => {
+      const idx = prev.findIndex(it => it.menuId === menuId);
+      if (idx === -1 && delta > 0) return [...prev, { menuId, qty: 1 }];
+      if (idx === -1) return prev;
+      const arr = [...prev];
+      const nq = arr[idx].qty + delta;
+      if (nq <= 0) arr.splice(idx, 1);
+      else arr[idx] = { ...arr[idx], qty: nq };
+      return arr;
+    });
+  }
+
+  function saveEdit() {
+    if (editItems.length === 0) return;
+    onEdit(order.id, editItems);
+    setEditMode(false);
+  }
+
+  const sub     = orderSubtotal(order);
+  const svc     = Math.round(sub * SERVICE_RATE);
+  const tot     = sub + svc;
+  const editSub = editItems.reduce((s, it) => s + (findItem(it.menuId)?.price || 0) * it.qty, 0);
+  const editSvc = Math.round(editSub * SERVICE_RATE);
+  const editTot = editSub + editSvc;
+
   return (
-    <div className="fixed inset-0 z-40 flex items-end md:items-center md:justify-center md:p-6" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" />
-      <div className="relative w-full md:max-w-lg bg-white rounded-t-3xl md:rounded-3xl max-h-[88vh] md:max-h-[80vh] flex flex-col shadow-2xl"
+    <div className="fixed inset-0 z-40 flex items-end md:items-center md:justify-center md:p-6"
+      onClick={editMode ? undefined : onClose}>
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]"
+        onClick={editMode ? undefined : onClose} />
+      <div className="relative w-full md:max-w-lg bg-white rounded-t-3xl md:rounded-3xl max-h-[92vh] md:max-h-[85vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}>
+
         <div className="pt-2.5 pb-1 grid place-items-center md:hidden">
           <div className="h-1 w-10 rounded-full bg-slate-300" />
         </div>
-        <div className="px-5 md:px-6 pt-2 md:pt-5 pb-3 flex items-start justify-between">
+
+        {/* Header */}
+        <div className="px-5 md:px-6 pt-2 md:pt-5 pb-3 border-b border-slate-100 flex items-start justify-between">
           <div>
-            <div className="text-[22px] font-extrabold text-slate-900 leading-none">{order.tableLabel}</div>
-            <div className="mt-2 flex items-center gap-2">
-              <StatusBadge status={order.status} />
-              <span className="text-[12px] text-slate-500 inline-flex items-center gap-1">
+            <div className="text-[20px] font-extrabold text-slate-900 leading-none">
+              {editMode ? 'Buyurtmani tahrirlash' : order.tableLabel}
+            </div>
+            <div className="mt-1.5 flex items-center gap-2">
+              {!editMode && <StatusBadge status={order.status} />}
+              <span suppressHydrationWarning className="text-[12px] text-slate-500 inline-flex items-center gap-1">
                 <Clock size={12}/> {minutesAgo(order.createdAt)}
               </span>
             </div>
           </div>
-          <button onClick={onClose} className="tap h-9 w-9 rounded-full bg-slate-100 grid place-items-center text-slate-600">
+          <button onClick={editMode ? cancelEdit : onClose}
+            className="tap h-9 w-9 rounded-full bg-slate-100 grid place-items-center text-slate-600">
             <X size={16}/>
           </button>
         </div>
 
-        <div className="px-5 md:px-6 overflow-y-auto flex-1">
-          <div className="rounded-2xl border border-slate-200 divide-y divide-slate-100">
-            {order.items.map((it, i) => {
-              const m = findItem(it.menuId);
-              return (
-                <div key={i} className="px-3.5 py-3 flex items-center justify-between">
-                  <div className="min-w-0 pr-2">
-                    <div className="text-[15px] font-semibold text-slate-800 truncate">{m?.name}</div>
-                    <div className="text-[12px] text-slate-500">{formatSoum(m?.price || 0)} each</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[13px] font-bold text-slate-900">×{it.qty}</div>
-                    <div className="text-[12px] text-slate-500 tabular-nums">{formatSoum((m?.price || 0) * it.qty)}</div>
-                  </div>
+        {/* Scrollable content */}
+        <div className="px-5 md:px-6 overflow-y-auto flex-1 py-4 space-y-4">
+          {editMode ? (
+            <>
+              {/* Current items with +/- controls */}
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Tarkibdagi taomlar
                 </div>
-              );
-            })}
-          </div>
+                <div className="rounded-2xl border border-slate-200 divide-y divide-slate-100">
+                  {editItems.length === 0 && (
+                    <div className="px-4 py-5 text-center text-[13px] text-slate-400">
+                      Hech qanday taom qoʻshilmagan
+                    </div>
+                  )}
+                  {editItems.map((it) => {
+                    const m = findItem(it.menuId);
+                    return (
+                      <div key={it.menuId} className="px-3.5 py-3 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[14px] font-semibold text-slate-800 truncate">{m?.name}</div>
+                          <div className="text-[12px] text-slate-500 tabular-nums">
+                            {formatSoum((m?.price || 0) * it.qty)}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button onClick={() => changeQty(it.menuId, -1)}
+                            className="tap h-8 w-8 rounded-full bg-slate-100 grid place-items-center text-slate-700">
+                            <Minus size={14}/>
+                          </button>
+                          <div className="min-w-[20px] text-center text-[14px] font-bold tabular-nums">{it.qty}</div>
+                          <button onClick={() => changeQty(it.menuId, +1)}
+                            className="tap h-8 w-8 rounded-full text-white grid place-items-center"
+                            style={{ background: NAVY }}>
+                            <Plus size={14}/>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-          <div className="mt-4 rounded-2xl bg-slate-50 p-4 space-y-2">
-            <Row k="Subtotal" v={formatSoum(sub)} />
-            <Row k={`Service (${Math.round(SERVICE_RATE * 100)}%)`} v={formatSoum(svc)} />
-            <div className="h-px bg-slate-200 my-1" />
-            <Row k="Total" v={formatSoum(tot)} bold />
-          </div>
+              {/* Add items from menu */}
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Taom qoʻshish
+                </div>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3">
+                  {CATEGORIES.map(c => {
+                    const on = addCat === c.id;
+                    const Ico = CATEGORY_ICON_MAP[c.icon];
+                    return (
+                      <button key={c.id} onClick={() => setAddCat(c.id)}
+                        className="tap shrink-0 h-9 px-3 rounded-full text-[12px] font-semibold inline-flex items-center gap-1.5 border transition"
+                        style={{
+                          background:  on ? NAVY : '#fff',
+                          color:       on ? '#fff' : '#334155',
+                          borderColor: on ? NAVY : '#e2e8f0',
+                        }}>
+                        {Ico && <Ico size={12}/>}
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="space-y-2">
+                  {MENU.filter(m => m.cat === addCat).map(m => {
+                    const q = editItems.find(it => it.menuId === m.id)?.qty || 0;
+                    return (
+                      <div key={m.id} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-slate-200 bg-white">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-semibold text-slate-800 truncate">{m.name}</div>
+                          <div className="text-[11px] text-slate-500 tabular-nums">
+                            {fmt(m.price)} soʻm
+                          </div>
+                        </div>
+                        {q === 0 ? (
+                          <button onClick={() => changeQty(m.id, +1)}
+                            className="tap h-8 w-8 rounded-full text-white grid place-items-center shrink-0"
+                            style={{ background: NAVY }}>
+                            <Plus size={14}/>
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button onClick={() => changeQty(m.id, -1)}
+                              className="tap h-7 w-7 rounded-full bg-slate-100 grid place-items-center text-slate-700">
+                              <Minus size={12}/>
+                            </button>
+                            <span className="text-[13px] font-bold tabular-nums w-5 text-center">{q}</span>
+                            <button onClick={() => changeQty(m.id, +1)}
+                              className="tap h-7 w-7 rounded-full text-white grid place-items-center"
+                              style={{ background: NAVY }}>
+                              <Plus size={12}/>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Updated total */}
+              <div className="rounded-2xl p-4 space-y-2" style={{ background: `${NAVY}0d` }}>
+                <Row k="Oraliq summa" v={formatSoum(editSub)} />
+                <Row k={`Xizmat haqi (${Math.round(SERVICE_RATE * 100)}%)`} v={formatSoum(editSvc)} />
+                <div className="h-px bg-slate-200 my-1" />
+                <Row k="Jami" v={formatSoum(editTot)} bold />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rounded-2xl border border-slate-200 divide-y divide-slate-100">
+                {order.items.map((it, i) => {
+                  const m = findItem(it.menuId);
+                  return (
+                    <div key={i} className="px-3.5 py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 pr-2">
+                          <div className={`text-[15px] font-semibold truncate ${it.status === 'cancelled' ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                            {m?.name}
+                          </div>
+                          <div className="text-[12px] text-slate-500">{formatSoum(m?.price || 0)} / dona</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-[13px] font-bold text-slate-900">×{it.qty}</div>
+                          <div className="text-[12px] text-slate-500 tabular-nums">
+                            {formatSoum((m?.price || 0) * it.qty)}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Per-item status buttons — hidden in readOnly mode */}
+                      {!readOnly && (
+                        <div className="flex gap-1.5 mt-2">
+                          {Object.entries(ITEM_STATUS_META).map(([key, meta]) => (
+                            <button key={key}
+                              onClick={() => onChangeItemStatus(order.id, it.menuId, key)}
+                              className="flex-1 py-1 rounded-lg text-[11px] font-semibold border transition inline-flex items-center justify-center gap-1"
+                              style={it.status === key
+                                ? { background: meta.dot, color: '#fff', borderColor: meta.dot }
+                                : { background: '#f8fafc', color: '#64748b', borderColor: '#e2e8f0' }
+                              }>
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                                style={{ background: it.status === key ? '#fff' : meta.dot }} />
+                              {meta.short}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4 space-y-2">
+                <Row k="Oraliq summa" v={formatSoum(sub)} />
+                <Row k={`Xizmat haqi (${Math.round(SERVICE_RATE * 100)}%)`} v={formatSoum(svc)} />
+                <div className="h-px bg-slate-200 my-1" />
+                <Row k="Jami" v={formatSoum(tot)} bold />
+              </div>
+            </>
+          )}
         </div>
 
+        {/* Footer */}
         <div className="p-4 pt-3 border-t border-slate-100 flex gap-2">
-          <button onClick={onClose}
-            className="tap h-12 flex-1 rounded-2xl border border-slate-200 text-slate-700 font-semibold">
-            Close
-          </button>
-          {action && (
-            <button onClick={() => { onAdvance(order.id); onClose(); }}
-              className="tap h-12 flex-[1.4] rounded-2xl text-white font-semibold"
-              style={{ background: NAVY }}>
-              {action.label}
-            </button>
+          {editMode ? (
+            <>
+              <button onClick={cancelEdit}
+                className="tap h-12 flex-1 rounded-2xl border border-slate-200 text-slate-700 font-semibold">
+                Bekor qilish
+              </button>
+              <button onClick={saveEdit} disabled={editItems.length === 0}
+                className="tap h-12 flex-[1.4] rounded-2xl text-white font-semibold disabled:opacity-40 inline-flex items-center justify-center gap-2"
+                style={{ background: NAVY }}>
+                <Check size={16}/> Saqlash
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={onClose}
+                className="tap h-12 flex-1 rounded-2xl border border-slate-200 text-slate-700 font-semibold">
+                Yopish
+              </button>
+              {canEdit && (
+                <button onClick={startEdit}
+                  className="tap h-12 flex-1 rounded-2xl border font-semibold inline-flex items-center justify-center gap-1.5"
+                  style={{ borderColor: `${NAVY}55`, color: NAVY, background: `${NAVY}0d` }}>
+                  <ChevronRight size={15}/> Tahrirlash
+                </button>
+              )}
+              {action && (
+                <button onClick={() => { onAdvance(order.id); onClose(); }}
+                  className="tap h-12 flex-[1.4] rounded-2xl text-white font-semibold"
+                  style={{ background: NAVY }}>
+                  {action.label}
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -321,8 +535,8 @@ export function NewOrderScreen({ draft, setDraft, onSubmit, occupiedIds }) {
   return (
     <div className="pb-6">
       <SectionHeader
-        title="New Order"
-        sub={`Step ${step} of 3 · ${step === 1 ? 'Select a table' : step === 2 ? 'Add items' : 'Review & confirm'}`}
+        title="Yangi buyurtma"
+        sub={`${step}-qadam 3 dan · ${step === 1 ? 'Stol tanlang' : step === 2 ? "Taomlar qo'shing" : "Ko'rib chiqing va tasdiqlang"}`}
       />
 
       <div className="px-5 md:px-8 pb-2">
@@ -365,7 +579,7 @@ function StepTable({ draft, setDraft, occupiedIds, onNext }) {
                       opacity: disabled ? 0.7 : 1,
                     }}>
                     <div className="text-[17px] leading-none">{t.label}</div>
-                    <div className="text-[11px] mt-1.5 font-medium opacity-80">{t.seats} seats</div>
+                    <div className="text-[11px] mt-1.5 font-medium opacity-80">{t.seats} oʻrin</div>
                     {disabled && !selected && (
                       <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full"
                         style={{ background: occupied ? '#f59e0b' : '#94a3b8' }}/>
@@ -381,7 +595,7 @@ function StepTable({ draft, setDraft, occupiedIds, onNext }) {
         <button onClick={onNext} disabled={!draft.tableId}
           className="tap h-12 w-full rounded-2xl text-white font-semibold disabled:opacity-40"
           style={{ background: NAVY }}>
-          Continue {draft.tableId ? `· ${TABLES.find(t => t.id === draft.tableId)?.label}` : ''}
+          Davom etish {draft.tableId ? `· ${TABLES.find(t => t.id === draft.tableId)?.label}` : ''}
         </button>
       </StickyFooter>
     </>
@@ -441,14 +655,14 @@ function StepMenu({ draft, setDraft, onBack, onNext }) {
               <div className="text-[13.5px] font-bold text-slate-900 leading-tight">{m.name}</div>
               <div className="text-[11px] text-slate-500 leading-tight mt-0.5 line-clamp-1">{m.desc}</div>
               <div className="mt-2 flex items-center justify-between">
-                <div className="text-[13px] font-extrabold tabular-nums" style={{ color: NAVY }}>
-                  {(m.price / 1000).toFixed(0)}k
+                <div className="text-[12px] font-extrabold tabular-nums" style={{ color: NAVY }}>
+                  {fmt(m.price)}
                 </div>
                 {q === 0 ? (
                   <button onClick={() => change(m.id, +1)}
                     className="tap h-9 px-3 rounded-full text-white text-[12px] font-semibold inline-flex items-center gap-1"
                     style={{ background: NAVY }}>
-                    <Plus size={13}/> Add
+                    <Plus size={13}/> Qoʻshish
                   </button>
                 ) : (
                   <div className="flex items-center gap-1.5">
@@ -481,9 +695,9 @@ function StepMenu({ draft, setDraft, onBack, onNext }) {
             style={{ background: NAVY }}>
             <span className="inline-flex items-center gap-2">
               <span className="bg-white/20 px-2 py-0.5 rounded-md text-[12px] font-bold">{totalItems}</span>
-              Review order
+              Buyurtmani koʻrib chiqish
             </span>
-            <span className="tabular-nums">{(totalAmt / 1000).toFixed(0)}k UZS</span>
+            <span className="tabular-nums">{fmt(totalAmt)} UZS</span>
           </button>
         </div>
       </StickyFooter>
@@ -516,16 +730,16 @@ function StepReview({ draft, setDraft, onBack, onSubmit }) {
           </div>
           <div className="flex-1">
             <div className="text-[15px] font-bold text-slate-900">{table?.zone} · {table?.label}</div>
-            <div className="text-[12px] text-slate-500">{table?.seats} seats · {draft.items.reduce((s, i) => s + i.qty, 0)} items</div>
+            <div className="text-[12px] text-slate-500">{table?.seats} oʻrin · {draft.items.reduce((s, i) => s + i.qty, 0)} ta taom</div>
           </div>
-          <button onClick={onBack} className="tap h-9 px-3 rounded-full bg-slate-100 text-[12px] font-semibold text-slate-700">Edit</button>
+          <button onClick={onBack} className="tap h-9 px-3 rounded-full bg-slate-100 text-[12px] font-semibold text-slate-700">Tahrirlash</button>
         </div>
       </div>
 
       <div className="px-5 md:px-8 mt-4">
         <div className="rounded-2xl bg-white border border-slate-200/70 divide-y divide-slate-100 max-w-2xl">
           {draft.items.length === 0 && (
-            <div className="px-4 py-8 text-center text-[13px] text-slate-500">No items yet — go back and add some.</div>
+            <div className="px-4 py-8 text-center text-[13px] text-slate-500">Taomlar yoʻq — ortga qayting va qoʻshing.</div>
           )}
           {draft.items.map((it, i) => {
             const m = findItem(it.menuId);
@@ -559,10 +773,10 @@ function StepReview({ draft, setDraft, onBack, onSubmit }) {
 
       <div className="px-5 md:px-8 mt-4">
         <div className="rounded-2xl p-4 space-y-2 max-w-2xl" style={{ background: `${NAVY}0d` }}>
-          <Row k="Subtotal" v={formatSoum(sub)} />
-          <Row k={`Service fee (${Math.round(SERVICE_RATE * 100)}%)`} v={formatSoum(svc)} />
+          <Row k="Oraliq summa" v={formatSoum(sub)} />
+          <Row k={`Xizmat haqi (${Math.round(SERVICE_RATE * 100)}%)`} v={formatSoum(svc)} />
           <div className="h-px bg-slate-200 my-1" />
-          <Row k="Total" v={formatSoum(tot)} bold />
+          <Row k="Jami" v={formatSoum(tot)} bold />
         </div>
       </div>
 
@@ -575,7 +789,7 @@ function StepReview({ draft, setDraft, onBack, onSubmit }) {
           <button onClick={onSubmit} disabled={draft.items.length === 0}
             className="tap h-12 flex-1 rounded-2xl text-white font-semibold disabled:opacity-40 inline-flex items-center justify-center gap-2"
             style={{ background: NAVY }}>
-            <Check size={18}/> Place Order
+            <Check size={18}/> Buyurtma berish
           </button>
         </div>
       </StickyFooter>
@@ -603,12 +817,12 @@ export function TablesScreen({ orders, onOpenOrder, occupiedIds }) {
 
   return (
     <div className="pb-6">
-      <SectionHeader title="Tables" sub={`${counts.free} free · ${counts.occupied} occupied · ${counts.unavailable} closed`} />
+      <SectionHeader title="Stollar" sub={`${counts.free} boʻsh · ${counts.occupied} band · ${counts.unavailable} yopiq`} />
 
       <div className="px-5 md:px-8 pb-2 flex items-center gap-3 text-[12px]">
-        <Legend color="#10b981" label="Free"/>
-        <Legend color="#f59e0b" label="Occupied"/>
-        <Legend color="#94a3b8" label="Closed"/>
+        <Legend color="#10b981" label="Boʻsh"/>
+        <Legend color="#f59e0b" label="Band"/>
+        <Legend color="#94a3b8" label="Yopiq"/>
       </div>
 
       <div className="px-5 md:px-8 pt-2 space-y-5 md:space-y-6">
@@ -656,9 +870,9 @@ function TableTile({ t, onClick }) {
       style={{ background: meta.bg, borderColor: meta.br, color: meta.tx }}>
       <span className="absolute top-2 right-2 h-2 w-2 rounded-full" style={{ background: meta.dot }}/>
       <div className="text-[18px] font-extrabold leading-none">{t.label}</div>
-      <div className="text-[11px] font-medium mt-1.5 opacity-80">{t.seats} seats</div>
+      <div className="text-[11px] font-medium mt-1.5 opacity-80">{t.seats} oʻrin</div>
       <div className="text-[10px] font-bold uppercase tracking-wider mt-1 opacity-90">
-        {t.status === 'free' ? 'Free' : t.status === 'occupied' ? 'In use' : 'Closed'}
+        {t.status === 'free' ? 'Boʻsh' : t.status === 'occupied' ? 'Band' : 'Yopiq'}
       </div>
     </button>
   );
@@ -677,7 +891,7 @@ function TableSheet({ table, order, onClose, onOpenOrder }) {
           <div className="flex items-start justify-between">
             <div>
               <div className="text-[22px] font-extrabold text-slate-900 leading-none">{table.label}</div>
-              <div className="mt-1.5 text-[12px] text-slate-500">{table.zone} · {table.seats} seats</div>
+              <div className="mt-1.5 text-[12px] text-slate-500">{table.zone} · {table.seats} oʻrin</div>
             </div>
             <button onClick={onClose} className="tap h-9 w-9 rounded-full bg-slate-100 grid place-items-center text-slate-600">
               <X size={16}/>
@@ -686,15 +900,15 @@ function TableSheet({ table, order, onClose, onOpenOrder }) {
 
           {table.status === 'free' && (
             <div className="mt-4 rounded-2xl p-4 text-center" style={{ background: '#ECFDF5' }}>
-              <div className="text-[13px] font-semibold" style={{ color: '#047857' }}>Table is free</div>
-              <div className="text-[12px] text-emerald-700/80 mt-1">Ready to seat new guests.</div>
+              <div className="text-[13px] font-semibold" style={{ color: '#047857' }}>Stol boʻsh</div>
+              <div className="text-[12px] text-emerald-700/80 mt-1">Yangi mehmonlarni qabul qilishga tayyor.</div>
             </div>
           )}
 
           {table.status === 'unavailable' && (
             <div className="mt-4 rounded-2xl p-4 text-center bg-slate-100">
-              <div className="text-[13px] font-semibold text-slate-700">Table closed</div>
-              <div className="text-[12px] text-slate-500 mt-1">Currently unavailable for service.</div>
+              <div className="text-[13px] font-semibold text-slate-700">Stol yopiq</div>
+              <div className="text-[12px] text-slate-500 mt-1">Hozir xizmat uchun mavjud emas.</div>
             </div>
           )}
 
@@ -717,17 +931,17 @@ function TableSheet({ table, order, onClose, onOpenOrder }) {
                   );
                 })}
                 {order.items.length > 4 && (
-                  <div className="px-3.5 py-2 text-[12px] text-slate-500">+ {order.items.length - 4} more</div>
+                  <div className="px-3.5 py-2 text-[12px] text-slate-500">+ {order.items.length - 4} ta yana</div>
                 )}
               </div>
               <div className="mt-3 flex items-center justify-between px-1">
-                <span className="text-[13px] text-slate-500">Total</span>
+                <span className="text-[13px] text-slate-500">Jami</span>
                 <span className="text-[16px] font-extrabold text-slate-900 tabular-nums">{formatSoum(orderTotal(order))}</span>
               </div>
               <button onClick={() => onOpenOrder(order)}
                 className="tap mt-4 h-12 w-full rounded-2xl text-white font-semibold inline-flex items-center justify-center gap-2"
                 style={{ background: NAVY }}>
-                Open order <ArrowRight size={16}/>
+                Buyurtmani ochish <ArrowRight size={16}/>
               </button>
             </>
           )}
@@ -742,7 +956,7 @@ function TableSheet({ table, order, onClose, onOpenOrder }) {
 export function ProfileScreen({ onLogout }) {
   return (
     <div className="pb-6">
-      <SectionHeader title="Profile" sub="Your shift today" />
+      <SectionHeader title="Profil" sub="Bugungi smenangiz" />
 
       <div className="px-5 md:px-8 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="rounded-3xl p-5 md:p-6 text-white relative overflow-hidden lg:col-span-1"
@@ -768,22 +982,22 @@ export function ProfileScreen({ onLogout }) {
 
         <div className="lg:col-span-2 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
-            <StatCard icon={ClipboardList} label="Orders today"  value={WAITER.ordersToday} />
-            <StatCard icon={TrendingUp}    label="This week"     value={WAITER.ordersWeek} />
-            <StatCard icon={Receipt}       label="Revenue today" value={`${(WAITER.revenueToday / 1000).toFixed(0)}k`} unit="UZS" />
-            <StatCard icon={Clock}         label="Shift"         value={WAITER.shift} small />
+            <StatCard icon={ClipboardList} label="Bugungi buyurtmalar" value={WAITER.ordersToday} />
+            <StatCard icon={TrendingUp}    label="Bu hafta"            value={WAITER.ordersWeek} />
+            <StatCard icon={Receipt}       label="Bugungi tushum"      value={fmt(WAITER.revenueToday)} unit="UZS" small />
+            <StatCard icon={Clock}         label="Smena"               value={WAITER.shift} small />
           </div>
 
           <div className="rounded-2xl bg-white border border-slate-200/70 divide-y divide-slate-100">
-            <ProfileRow icon={Phone}    label="Phone"         value={WAITER.phone}/>
-            <ProfileRow icon={Bell}     label="Notifications" value="On"/>
-            <ProfileRow icon={Settings} label="Preferences"   value="English"/>
+            <ProfileRow icon={Phone}    label="Telefon"          value={WAITER.phone}/>
+            <ProfileRow icon={Bell}     label="Bildirishnomalar" value="Yoqilgan"/>
+            <ProfileRow icon={Settings} label="Sozlamalar"       value="O'zbek"/>
           </div>
 
           <button onClick={onLogout}
             className="tap w-full h-12 rounded-2xl bg-white border border-slate-200 text-[14px] font-semibold inline-flex items-center justify-center gap-2"
             style={{ color: '#dc2626' }}>
-            <LogOut size={16}/> Log out
+            <LogOut size={16}/> Chiqish
           </button>
           <div className="text-center text-[11px] text-slate-400">OrderiX · v2.4.1</div>
         </div>
@@ -815,6 +1029,168 @@ function ProfileRow({ icon: Ico, label, value }) {
       <div className="flex-1 text-[14px] font-semibold text-slate-800">{label}</div>
       <span className="text-[13px] text-slate-500">{value}</span>
       <ChevronRight size={14} className="text-slate-400"/>
+    </button>
+  );
+}
+
+// ─── HISTORY ─────────────────────────────────────
+
+const PAGE_SIZE = 8;
+
+function paginate(cur, total) {
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+  if (cur <= 3)           return [1, 2, 3, 4, '…', total];
+  if (cur >= total - 2)   return [1, '…', total - 3, total - 2, total - 1, total];
+  return [1, '…', cur - 1, cur, cur + 1, '…', total];
+}
+
+export function HistoryScreen({ orders, onOpen }) {
+  const [page, setPage] = useState(1);
+
+  // Faqat tugatilgan (closed) orderlar
+  const closed = orders
+    .filter(o => o.status === 'closed')
+    .sort((a, b) => b.createdAt - a.createdAt);
+
+  const totalPages = Math.max(1, Math.ceil(closed.length / PAGE_SIZE));
+  const safePage   = Math.min(page, totalPages);
+  const paged      = closed.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const totalRevenue = closed.reduce((s, o) => s + orderTotal(o), 0);
+
+  return (
+    <div className="pb-8">
+      <SectionHeader
+        title="Tarix"
+        sub={`Bugungi tugatilgan buyurtmalar`}
+      />
+
+      {/* Stats */}
+      <div className="px-5 md:px-8 grid grid-cols-2 gap-3 mb-4">
+        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 text-center">
+          <div className="text-[12px] text-slate-500 mb-1">Tugatilgan</div>
+          <div className="text-[28px] font-extrabold text-slate-900 leading-none tabular-nums">{closed.length}</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">ta buyurtma</div>
+        </div>
+        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 text-center">
+          <div className="text-[12px] text-slate-500 mb-1">Jami daromad</div>
+          <div className="text-[20px] font-extrabold leading-none tabular-nums" style={{ color: NAVY }}>
+            {fmt(totalRevenue)}
+          </div>
+          <div className="text-[11px] text-slate-400 mt-0.5">UZS</div>
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="px-4 md:px-8 space-y-2">
+        {paged.length === 0 ? (
+          <div className="py-16 text-center">
+            <div className="text-[40px] mb-3">📋</div>
+            <div className="text-[15px] font-semibold text-slate-700">Tugatilgan buyurtmalar yo'q</div>
+            <div className="text-[13px] text-slate-500 mt-1">Buyurtmalar tugatilgach shu yerda ko'rinadi</div>
+          </div>
+        ) : paged.map(o => (
+          <HistoryRow key={o.id} order={o} onOpen={onOpen} />
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="px-5 md:px-8 mt-5 flex items-center justify-between gap-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+            className="tap h-10 px-4 rounded-xl border text-[13px] font-semibold disabled:opacity-30 flex items-center gap-1"
+            style={{ borderColor: '#e2e8f0', color: '#475569' }}>
+            <ChevronLeft size={15}/> Oldingi
+          </button>
+
+          <div className="flex items-center gap-1">
+            {paginate(safePage, totalPages).map((p, i) =>
+              p === '…' ? (
+                <span key={`d${i}`} className="w-8 text-center text-[13px] text-slate-400">…</span>
+              ) : (
+                <button key={p} onClick={() => setPage(p)}
+                  className="tap h-9 w-9 rounded-xl text-[13px] font-bold"
+                  style={{
+                    background: p === safePage ? NAVY : '#f1f5f9',
+                    color:      p === safePage ? '#fff' : '#64748b',
+                  }}>
+                  {p}
+                </button>
+              )
+            )}
+          </div>
+
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+            className="tap h-10 px-4 rounded-xl border text-[13px] font-semibold disabled:opacity-30 flex items-center gap-1"
+            style={{ borderColor: '#e2e8f0', color: '#475569' }}>
+            Keyingi <ChevronRight size={15}/>
+          </button>
+        </div>
+      )}
+
+      {closed.length > 0 && (
+        <div className="mt-2 text-center text-[12px] text-slate-400">
+          {Math.min(safePage * PAGE_SIZE, closed.length)} / {closed.length} ko'rsatilmoqda
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HistoryRow({ order, onOpen }) {
+  const total   = orderTotal(order);
+  const itemCnt = orderItemCount(order);
+  const sub     = orderSubtotal(order);
+
+  return (
+    <button onClick={() => onOpen(order)}
+      className="tap w-full rounded-2xl bg-white border border-slate-200/60 text-left overflow-hidden"
+      style={{ boxShadow: '0 1px 4px rgba(15,23,42,.06)' }}>
+      <div className="flex items-stretch">
+        {/* Left accent bar */}
+        <div className="w-1 shrink-0 rounded-l-2xl" style={{ background: NAVY }} />
+
+        <div className="flex-1 min-w-0 px-4 py-3.5 flex items-center gap-3">
+          {/* Table avatar */}
+          <div className="h-11 w-11 rounded-xl grid place-items-center font-extrabold text-[12px] text-white shrink-0"
+            style={{ background: `linear-gradient(135deg, ${NAVY}, ${ACCENT})` }}>
+            {order.tableLabel.split(' · ')[0].replace(/\s/g, '')}
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[15px] font-extrabold text-slate-900 leading-none">
+                {order.tableLabel.split(' · ')[0]}
+              </span>
+              <span className="text-[12px] text-slate-500">
+                · {order.tableLabel.split(' · ')[1]}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 mt-1.5">
+              <span className="text-[11.5px] text-slate-500 inline-flex items-center gap-1">
+                <Inbox size={12}/> {itemCnt} ta taom
+              </span>
+              <span suppressHydrationWarning className="text-[11.5px] text-slate-400 inline-flex items-center gap-1">
+                <Clock size={12}/> {minutesAgo(order.createdAt)}
+              </span>
+            </div>
+          </div>
+
+          {/* Amount */}
+          <div className="text-right shrink-0">
+            <div className="text-[15px] font-extrabold tabular-nums leading-none" style={{ color: NAVY }}>
+              {fmt(total)}
+            </div>
+            <div className="text-[10.5px] text-slate-400 mt-0.5">UZS</div>
+          </div>
+        </div>
+
+        {/* Right chevron */}
+        <div className="flex items-center pr-3 text-slate-300">
+          <ChevronRight size={16}/>
+        </div>
+      </div>
     </button>
   );
 }

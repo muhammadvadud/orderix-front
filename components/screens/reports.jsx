@@ -95,11 +95,11 @@ export default function ReportsScreen({ orders }) {
         </Card>
         <Card className="!p-4 sm:!p-5">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Bekor qilish</div>
+            <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Tayyorlanmoqda</div>
             <Trend value={-1.4} />
           </div>
           <div className="mt-2 text-lg sm:text-2xl font-bold num text-ink-900 leading-tight">
-            {((orders.filter(o => o.status === 'cancelled').length / orders.length) * 100).toFixed(1)}%
+            {orders.filter(o => o.status === 'preparing').length}
           </div>
         </Card>
       </div>

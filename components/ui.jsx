@@ -183,28 +183,36 @@ export function Drawer({ open, onClose, title, children, footer, width = 480 }) 
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 anim-fade">
-      <div className="absolute inset-0 bg-ink-900/30" onClick={onClose} />
-      <div className="hidden sm:flex absolute top-0 right-0 h-full bg-white shadow-pop anim-slide-right flex-col"
-           style={{ width }}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-ink-100">
-          <h3 className="font-semibold text-ink-900">{title}</h3>
-          <IconButton name="X" onClick={onClose} label="Yopish" size={32} />
-        </div>
-        <div className="flex-1 overflow-auto">{children}</div>
-        {footer && (
-          <div className="px-5 py-3.5 bg-white border-t border-ink-100 flex justify-end gap-2">{footer}</div>
-        )}
-      </div>
-      <div className="sm:hidden absolute inset-0 bg-white anim-slide-up flex flex-col"
-           style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="flex items-center gap-2 px-3 py-3 border-b border-ink-100">
+      {/* Backdrop — desktop only */}
+      <div className="absolute inset-0 hidden sm:block bg-ink-900/30" onClick={onClose} />
+      {/* Single responsive panel — children rendered ONCE to avoid stale React instances */}
+      <div
+        className="drawer-panel absolute inset-0 sm:inset-y-0 sm:right-0 sm:left-auto bg-white sm:shadow-pop flex flex-col"
+        style={{ '--drawer-width': `${width}px`, paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        {/* Mobile header */}
+        <div className="sm:hidden flex items-center gap-2 px-3 py-3 border-b border-ink-100">
           <IconButton name="ArrowLeft" onClick={onClose} label="Orqaga" size={36} />
           <h3 className="font-semibold text-ink-900 text-base flex-1 truncate">{title}</h3>
         </div>
+        {/* Desktop header */}
+        <div className="hidden sm:flex items-center justify-between px-5 py-4 border-b border-ink-100">
+          <h3 className="font-semibold text-ink-900">{title}</h3>
+          <IconButton name="X" onClick={onClose} label="Yopish" size={32} />
+        </div>
+        {/* Content — rendered once */}
         <div className="flex-1 overflow-auto">{children}</div>
+        {/* Footer */}
         {footer && (
-          <div className="px-4 py-3 bg-white border-t border-ink-100 flex gap-2"
-               style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>{footer}</div>
+          <>
+            <div className="sm:hidden px-4 py-3 bg-white border-t border-ink-100 flex gap-2"
+                 style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
+              {footer}
+            </div>
+            <div className="hidden sm:flex px-5 py-3.5 bg-white border-t border-ink-100 justify-end gap-2">
+              {footer}
+            </div>
+          </>
         )}
       </div>
     </div>

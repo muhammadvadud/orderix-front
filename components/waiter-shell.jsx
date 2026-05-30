@@ -1,29 +1,33 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { WAITER, INITIAL_ORDERS, TABLES, WAITER_COLORS, nextAction } from '../lib/waiter-data';
+import { WAITER, INITIAL_ORDERS, HISTORY_ORDERS, TABLES, WAITER_COLORS, nextAction } from '../lib/waiter-data';
 import {
   MyOrdersScreen, NewOrderScreen, TablesScreen, ProfileScreen,
-  OrderDetailSheet, Toast,
+  HistoryScreen, OrderDetailSheet, Toast,
 } from './waiter/screens';
 import {
-  ClipboardList, PlusCircle, Grid, User, Clock, Bell, LogOut,
+  ClipboardList, PlusCircle, Grid, User, Clock, Bell, LogOut, Receipt,
 } from './waiter/icons';
 
 const { NAVY, ACCENT, BG } = WAITER_COLORS;
 
 const NAV_ITEMS = [
-  { id: 'orders',  label: 'My Orders', Ico: ClipboardList, badge: true },
-  { id: 'new',     label: 'New Order', Ico: PlusCircle },
-  { id: 'tables',  label: 'Tables',    Ico: Grid },
-  { id: 'profile', label: 'Profile',   Ico: User },
+  { id: 'orders',  label: 'Buyurtmalarim',  Ico: ClipboardList, badge: true },
+  { id: 'new',     label: 'Yangi buyurtma', Ico: PlusCircle },
+  { id: 'tables',  label: 'Stollar',        Ico: Grid },
+  { id: 'history', label: 'Tarix',          Ico: Receipt },
+  { id: 'profile', label: 'Profil',         Ico: User },
 ];
 
 export default function WaiterShell() {
   const router = useRouter();
   const [tab, setTab]           = useState('orders');
-  const [orders, setOrders]     = useState(INITIAL_ORDERS);
-  const [openOrder, setOpenOrder] = useState(null);
+  const [orders, setOrders]     = useState(() => [...HISTORY_ORDERS, ...INITIAL_ORDERS]);
+  const [openOrderId,     setOpenOrderId]     = useState(null);
+  const [historyOrderId,  setHistoryOrderId]  = useState(null);
+  const openOrder    = orders.find(o => o.id === openOrderId)    || null;
+  const historyOrder = orders.find(o => o.id === historyOrderId) || null;
   const [toast, setToast]       = useState(null);
   const [draft, setDraft]       = useState({ step: 1, tableId: null, items: [] });
 
@@ -34,9 +38,38 @@ export default function WaiterShell() {
     setOrders(os => os.map(o => {
       if (o.id !== id) return o;
       const a = nextAction(o.status);
-      return a ? { ...o, status: a.next } : o;
+      if (!a) return o;
+      const items = a.next === 'delivered'
+        ? o.items.map(it => it.status !== 'cancelled' ? { ...it, status: 'delivered' } : it)
+        : o.items;
+      return { ...o, status: a.next, items };
     }));
-    setToast('Order updated');
+    setToast('Buyurtma yangilandi');
+  }
+
+  function editOrderItems(id, newItems) {
+    setOrders(os => os.map(o => {
+      if (o.id !== id) return o;
+      const existingSt = {};
+      o.items.forEach(it => { existingSt[it.menuId] = it.status || 'preparing'; });
+      const updated = newItems.map(it => ({ ...it, status: existingSt[it.menuId] || 'preparing' }));
+      return { ...o, items: updated };
+    }));
+    setToast('Buyurtma tahrirlandi');
+  }
+
+  function changeItemStatus(orderId, menuId, newStatus) {
+    setOrders(os => os.map(o => {
+      if (o.id !== orderId) return o;
+      const newItems    = o.items.map(it => it.menuId === menuId ? { ...it, status: newStatus } : it);
+      const allDone     = newItems.every(it => it.status !== 'preparing');
+      const anyDelivered = newItems.some(it => it.status === 'delivered');
+      if (allDone && anyDelivered && o.status === 'preparing') {
+        setToast('Barcha taomlar yetkazildi');
+        return { ...o, items: newItems, status: 'delivered' };
+      }
+      return { ...o, items: newItems };
+    }));
   }
 
   function placeOrder() {
@@ -47,12 +80,12 @@ export default function WaiterShell() {
       tableLabel: `${table.label} · ${table.zone}`,
       status: 'preparing',
       createdAt: Date.now(),
-      items: draft.items,
+      items: draft.items.map(it => ({ ...it, status: 'preparing' })),
     };
     setOrders(os => [newOrder, ...os]);
     setDraft({ step: 1, tableId: null, items: [] });
     setTab('orders');
-    setToast('Order placed · sent to kitchen');
+    setToast('Buyurtma berildi · oshxonaga yuborildi');
   }
 
   function handleLogout() {
@@ -67,16 +100,18 @@ export default function WaiterShell() {
         <WaiterTopBar />
         <main className="flex-1 min-w-0 relative pb-28 md:pb-8">
           <div className="mx-auto w-full max-w-7xl">
-            {tab === 'orders'  && <MyOrdersScreen orders={orders} onAdvance={advance} onOpen={setOpenOrder} onGoNew={() => setTab('new')} />}
+            {tab === 'orders'  && <MyOrdersScreen orders={orders} onAdvance={advance} onOpen={o => setOpenOrderId(o.id)} onGoNew={() => setTab('new')} />}
             {tab === 'new'     && <NewOrderScreen draft={draft} setDraft={setDraft} onSubmit={placeOrder} occupiedIds={occupiedIds} />}
-            {tab === 'tables'  && <TablesScreen   orders={orders} onOpenOrder={(o) => { setTab('orders'); setOpenOrder(o); }} occupiedIds={occupiedIds} />}
+            {tab === 'tables'  && <TablesScreen   orders={orders} onOpenOrder={(o) => { setTab('orders'); setOpenOrderId(o.id); }} occupiedIds={occupiedIds} />}
+            {tab === 'history' && <HistoryScreen  orders={orders} onOpen={o => setHistoryOrderId(o.id)} />}
             {tab === 'profile' && <ProfileScreen  onLogout={handleLogout} />}
           </div>
         </main>
       </div>
       <WaiterBottomNav tab={tab} setTab={setTab} activeCount={activeCount} />
 
-      <OrderDetailSheet order={openOrder} onClose={() => setOpenOrder(null)} onAdvance={advance} />
+      <OrderDetailSheet order={openOrder}    onClose={() => setOpenOrderId(null)}    onAdvance={advance} onEdit={editOrderItems} onChangeItemStatus={changeItemStatus} />
+      <OrderDetailSheet order={historyOrder} onClose={() => setHistoryOrderId(null)} readOnly onAdvance={() => {}} onEdit={() => {}} onChangeItemStatus={() => {}} />
       <Toast message={toast} onDone={() => setToast(null)} />
     </div>
   );
@@ -88,7 +123,7 @@ function WaiterTopBar() {
       <div className="flex items-center gap-2 text-[13px] text-slate-500">
         <span className="font-semibold text-slate-700">{WAITER.restaurant}</span>
         <span className="h-1 w-1 rounded-full bg-slate-300"/>
-        <span className="inline-flex items-center gap-1"><Clock size={13}/> Shift {WAITER.shift}</span>
+        <span className="inline-flex items-center gap-1"><Clock size={13}/> Smena {WAITER.shift}</span>
       </div>
       <div className="flex items-center gap-3">
         <button className="tap h-10 w-10 rounded-full bg-slate-100 grid place-items-center text-slate-700">
@@ -119,7 +154,7 @@ function WaiterSidebar({ tab, setTab, activeCount, onLogout }) {
         </div>
         <div>
           <div className="text-[16px] font-extrabold text-slate-900 leading-none">OrderiX</div>
-          <div className="text-[11px] text-slate-500 mt-1">Waiter Console</div>
+          <div className="text-[11px] text-slate-500 mt-1">Ofitsiant paneli</div>
         </div>
       </div>
 
@@ -165,10 +200,11 @@ function WaiterSidebar({ tab, setTab, activeCount, onLogout }) {
 
 function WaiterBottomNav({ tab, setTab, activeCount }) {
   const items = [
-    { id: 'orders',  label: 'Orders',  Ico: ClipboardList, badge: activeCount },
-    { id: 'new',     label: 'New',     Ico: PlusCircle,    primary: true },
-    { id: 'tables',  label: 'Tables',  Ico: Grid },
-    { id: 'profile', label: 'Profile', Ico: User },
+    { id: 'orders',  label: 'Buyurtmalar', Ico: ClipboardList, badge: activeCount },
+    { id: 'new',     label: 'Yangi',       Ico: PlusCircle,    primary: true },
+    { id: 'tables',  label: 'Stollar',     Ico: Grid },
+    { id: 'history', label: 'Tarix',       Ico: Receipt },
+    { id: 'profile', label: 'Profil',      Ico: User },
   ];
   return (
     <div className="md:hidden fixed left-0 right-0 z-40 px-3"
