@@ -6,20 +6,20 @@ import {
   PageHeader, EmptyRow, EmptyState, Drawer,
 } from '../ui';
 import {
-  STAFF, STATUSES, STATUS_META, ITEM_STATUS_META, MENU, CATEGORIES,
+  STATUSES, STATUS_META, ITEM_STATUS_META,
   formatUZS, formatUZSShort, formatTime, formatDate, timeAgo,
 } from '@/lib/data';
 
-function OrderDetail({ order, onChangeStatus, onEdit, onChangeItemStatus }) {
+function OrderDetail({ order, menu = [], categories = [], onChangeStatus, onEdit, onChangeItemStatus }) {
   const [editMode, setEditMode] = useState(false);
   const [editItems, setEditItems] = useState([]);
-  const [activeCat, setActiveCat] = useState(CATEGORIES[0]?.id || '');
+  const [activeCat, setActiveCat] = useState(categories[0]?.id || '');
 
   const canEdit = order.status !== 'cancelled' && order.status !== 'closed';
 
   function startEdit() {
     setEditItems(order.items.map(it => ({ ...it })));
-    setActiveCat(CATEGORIES[0]?.id || '');
+    setActiveCat(categories[0]?.id || '');
     setEditMode(true);
   }
   function cancelEdit() { setEditMode(false); setEditItems([]); }
@@ -92,7 +92,7 @@ function OrderDetail({ order, onChangeStatus, onEdit, onChangeItemStatus }) {
             Taom qoʻshish
           </div>
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-2.5 pb-0.5">
-            {CATEGORIES.map(c => (
+            {categories.map(c => (
               <button key={c.id} onClick={() => setActiveCat(c.id)}
                 className={`shrink-0 px-2.5 py-1.5 rounded-full text-[11px] font-medium border transition whitespace-nowrap flex items-center gap-1 ${
                   activeCat === c.id
@@ -105,7 +105,7 @@ function OrderDetail({ order, onChangeStatus, onEdit, onChangeItemStatus }) {
             ))}
           </div>
           <div className="space-y-1.5">
-            {MENU.filter(m => m.category === activeCat).map(m => {
+            {menu.filter(m => m.category === activeCat).map(m => {
               const q = editItems.find(it => it.menuId === m.id)?.qty || 0;
               return (
                 <div key={m.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-ink-100 bg-white">
@@ -270,7 +270,7 @@ function OrderDetail({ order, onChangeStatus, onEdit, onChangeItemStatus }) {
   );
 }
 
-export default function OrdersScreen({ orders, setOrders, openOrderId, setOpenOrderId }) {
+export default function OrdersScreen({ orders, staff = [], menu = [], categories = [], openOrderId, setOpenOrderId, onUpdateStatus, onChangeItemStatus, onEditOrder }) {
   const [statusFilter, setStatusFilter] = useState('');
   const [waiterFilter, setWaiterFilter] = useState('');
   const [dateRange,   setDateRange]     = useState('today');
@@ -278,7 +278,7 @@ export default function OrdersScreen({ orders, setOrders, openOrderId, setOpenOr
   const [sort,        setSort]          = useState({ key: 'time', dir: 'desc' });
   const [showFilters, setShowFilters]   = useState(false);
 
-  const waiters = STAFF.filter(s => s.role === 'Ofitsiant');
+  const waiters = staff.filter(s => s.roleRaw === 'waiter');
 
   const filtered = useMemo(() => {
     let list = [...orders];
@@ -317,39 +317,16 @@ export default function OrdersScreen({ orders, setOrders, openOrderId, setOpenOr
   }
 
   function updateStatus(id, newStatus) {
-    setOrders(list => list.map(o => {
-      if (o.id !== id) return o;
-      const items = newStatus !== 'closed'
-        ? o.items.map(it => it.status !== 'cancelled' ? { ...it, status: newStatus } : it)
-        : o.items;
-      return { ...o, status: newStatus, items };
-    }));
+    onUpdateStatus(id, newStatus);
   }
   function closeOrder(id) {
-    setOrders(list => list.map(o => o.id === id ? { ...o, status: 'closed' } : o));
+    onUpdateStatus(id, 'closed');
   }
   function changeItemStatus(orderId, itemId, newStatus) {
-    setOrders(list => list.map(o => {
-      if (o.id !== orderId) return o;
-      const newItems = o.items.map(it => it.id === itemId ? { ...it, status: newStatus } : it);
-      const allDone     = newItems.every(it => it.status !== 'preparing');
-      const anyDelivered = newItems.some(it => it.status === 'delivered');
-      const autoStatus  = (allDone && anyDelivered && o.status === 'preparing') ? 'delivered' : o.status;
-      return { ...o, items: newItems, status: autoStatus };
-    }));
+    onChangeItemStatus(orderId, itemId, newStatus);
   }
   function editOrder(id, newItems) {
-    setOrders(list => list.map(o => {
-      if (o.id !== id) return o;
-      const existingSt = {};
-      o.items.forEach(it => { existingSt[it.menuId] = it.status || 'preparing'; });
-      const updated    = newItems.map(it => ({ ...it, status: existingSt[it.menuId] || 'preparing' }));
-      const subtotal   = updated.reduce((s, it) => s + it.price * it.qty, 0);
-      const serviceFee = Math.round(subtotal * 0.1);
-      const total      = subtotal + serviceFee;
-      const itemCount  = updated.reduce((s, it) => s + it.qty, 0);
-      return { ...o, items: updated, subtotal, serviceFee, total, itemCount };
-    }));
+    onEditOrder(id, newItems);
   }
 
   function SortHeader({ k, children, align = 'left' }) {
@@ -608,7 +585,7 @@ export default function OrdersScreen({ orders, setOrders, openOrderId, setOpenOr
           </>
         )}
       >
-        {open && <OrderDetail order={open} onChangeStatus={(s) => updateStatus(open.id, s)} onEdit={editOrder} onChangeItemStatus={changeItemStatus} />}
+        {open && <OrderDetail order={open} menu={menu} categories={categories} onChangeStatus={(s) => updateStatus(open.id, s)} onEdit={editOrder} onChangeItemStatus={changeItemStatus} />}
       </Drawer>
     </div>
   );

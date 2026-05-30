@@ -2,8 +2,8 @@
 import { Icon } from '../Icon';
 import { Card, Button, Badge, Avatar, Trend, PageHeader } from '../ui';
 import {
-  STATUSES, STATUS_META, STAFF,
-  topItemsToday, formatUZSShort, formatTime, timeAgo,
+  STATUSES, STATUS_META,
+  topItemsFromOrders, formatUZSShort, formatTime, timeAgo,
 } from '@/lib/data';
 
 function StatCard({ icon, iconBg, iconFg, label, value, trend, sub }) {
@@ -195,17 +195,19 @@ function ActivityFeed({ orders }) {
   );
 }
 
-export default function DashboardScreen({ orders, onOpenOrder, onNavigate }) {
+export default function DashboardScreen({ orders, staff = [], userName = '', onOpenOrder, onNavigate }) {
   const today = orders;
   const openCount = today.filter(o => o.status === 'preparing').length;
-  const revenue = today.filter(o => o.status !== 'preparing').reduce((s, o) => s + o.total, 0);
+  const revenue = today.filter(o => o.status !== 'preparing' && o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
   const waiterIds = new Set(today.map(o => o.waiterId));
-  const topItems = topItemsToday(orders).slice(0, 5);
+  const topItems = topItemsFromOrders(orders, 5);
+  const waiterCount = staff.filter(s => s.roleRaw === 'waiter').length;
+  const firstName = (userName || '').split(' ')[0] || 'foydalanuvchi';
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
-        title="Xayrli kun, Aziza"
+        title={`Xayrli kun, ${firstName}`}
         subtitle="Bugun restoranlaringizdagi vaziyat."
         actions={
           <>
@@ -216,7 +218,7 @@ export default function DashboardScreen({ orders, onOpenOrder, onNavigate }) {
       />
 
       <div className="md:hidden mb-4">
-        <h1 className="text-xl font-bold text-ink-900">Xayrli kun, Aziza 👋</h1>
+        <h1 className="text-xl font-bold text-ink-900">Xayrli kun, {firstName} 👋</h1>
         <p className="text-xs text-ink-500 mt-0.5">Bugun restoranlaringizdagi vaziyat.</p>
       </div>
 
@@ -230,7 +232,7 @@ export default function DashboardScreen({ orders, onOpenOrder, onNavigate }) {
           label="Bugungi tushum" value={formatUZSShort(revenue)} trend={8.4} sub="soʻm · sof tushum" />
         <StatCard icon="Users" iconBg="#1F4E790F" iconFg="#1F4E79"
           label="Faol ofitsiantlar" value={waiterIds.size} trend={0}
-          sub={`${STAFF.filter(s => s.role === 'Ofitsiant').length} ta ofitsiant`} />
+          sub={`${waiterCount} ta ofitsiant`} />
       </div>
 
       <div className="md:hidden mt-4 grid grid-cols-2 gap-3">

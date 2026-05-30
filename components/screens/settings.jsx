@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from '../Icon';
 import { Card, Button, Input, Select, Field, PageHeader } from '../ui';
+import { getSettings, updateSettings } from '@/lib/services';
 
 function Toggle({ checked, onChange }) {
   return (
@@ -14,10 +15,41 @@ function Toggle({ checked, onChange }) {
 
 export default function SettingsScreen() {
   const [tab, setTab]                     = useState('general');
-  const [restaurantName, setRestaurantName] = useState('OrderiX Restoranlar guruhi');
+  const [restaurantName, setRestaurantName] = useState('');
   const [serviceFee, setServiceFee]       = useState(10);
   const [currency, setCurrency]           = useState('UZS');
   const [notif, setNotif]                 = useState({ orders: true, staff: false, daily: true });
+  const [saving, setSaving]               = useState(false);
+
+  useEffect(() => {
+    getSettings().then(s => {
+      if (s.restaurant_name != null) setRestaurantName(s.restaurant_name);
+      if (s.service_fee != null) setServiceFee(Number(s.service_fee));
+      setNotif({
+        orders: s.notify_orders ?? true,
+        staff: s.notify_staff ?? false,
+        daily: s.notify_daily ?? true,
+      });
+    }).catch(() => {});
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await updateSettings({
+        restaurant_name: restaurantName,
+        service_fee: serviceFee,
+        notify_orders: notif.orders,
+        notify_staff: notif.staff,
+        notify_daily: notif.daily,
+      });
+      alert('Sozlamalar saqlandi');
+    } catch (e) {
+      alert(e.message || 'Saqlashda xatolik');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const tabs = [
     { id: 'general',       label: 'Umumiy',          icon: 'Settings' },
@@ -137,7 +169,9 @@ export default function SettingsScreen() {
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline">Bekor qilish</Button>
-            <Button variant="primary" icon="Check">Oʻzgarishlarni saqlash</Button>
+            <Button variant="primary" icon="Check" onClick={save} disabled={saving}>
+              {saving ? 'Saqlanmoqda…' : 'Oʻzgarishlarni saqlash'}
+            </Button>
           </div>
         </div>
       </div>

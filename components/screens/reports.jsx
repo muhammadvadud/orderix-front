@@ -6,27 +6,36 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Card, Button, Select, Trend, PageHeader } from '../ui';
-import { SERIES_30, topItemsToday, formatUZS, formatUZSShort } from '@/lib/data';
+import { topItemsFromOrders, formatUZS, formatUZSShort } from '@/lib/data';
+import { seriesStats } from '@/lib/services';
 
 export default function ReportsScreen({ orders }) {
   const [range, setRange]   = useState('30d');
   const [isSmall, setIsSmall] = useState(false);
+  const [data, setData]     = useState([]);
 
   useEffect(() => {
     setIsSmall(window.innerWidth < 640);
   }, []);
 
-  const data = SERIES_30;
+  useEffect(() => {
+    let active = true;
+    seriesStats(range)
+      .then(d => { if (active) setData(d.map(x => ({ ...x, revenue: Number(x.revenue) || 0, orders: Number(x.orders) || 0 }))); })
+      .catch(() => { if (active) setData([]); });
+    return () => { active = false; };
+  }, [range]);
+
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
   const totalOrd = data.reduce((s, d) => s + d.orders, 0);
-  const avgTicket = Math.round(totalRev / totalOrd);
+  const avgTicket = totalOrd ? Math.round(totalRev / totalOrd) : 0;
   const last7 = data.slice(-7);
   const prev7 = data.slice(-14, -7);
   const wkRev = last7.reduce((s, d) => s + d.revenue, 0);
   const prevWkRev = prev7.reduce((s, d) => s + d.revenue, 0);
-  const wkTrend = ((wkRev - prevWkRev) / prevWkRev * 100).toFixed(1);
+  const wkTrend = prevWkRev ? ((wkRev - prevWkRev) / prevWkRev * 100).toFixed(1) : '0';
 
-  const topItems = topItemsToday(orders).slice(0, 10);
+  const topItems = topItemsFromOrders(orders, 10);
 
   const tooltipStyle = {
     background: 'white',

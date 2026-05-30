@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Card, Button, IconButton, Avatar, RoleBadge, Input, Select, Modal, Field, PageHeader, EmptyRow, EmptyState } from '../ui';
-import { ZONES, formatDate } from '@/lib/data';
+import { formatDate } from '@/lib/data';
 
 function StaffForm({ initial, onSave, onCancel }) {
   const [name, setName]   = useState(initial?.name || '');
@@ -33,7 +33,7 @@ function StaffForm({ initial, onSave, onCancel }) {
   );
 }
 
-export default function StaffScreen({ staff, setStaff }) {
+export default function StaffScreen({ staff, zonesCount = 0, onSaveStaff, onRemoveStaff }) {
   const [modal, setModal]         = useState(null);
   const [roleFilter, setRoleFilter] = useState('');
   const [query, setQuery]         = useState('');
@@ -44,19 +44,19 @@ export default function StaffScreen({ staff, setStaff }) {
     return true;
   });
 
-  function saveStaff(data) {
-    if (modal === 'add' || !modal.editId) {
-      const initials = data.name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
-      setStaff(list => [...list, { ...data, id: `s${Date.now()}`, joined: new Date().toISOString().slice(0, 10), avatar: initials, color: '#2E75B6' }]);
-    } else {
-      setStaff(list => list.map(s => s.id === modal.editId ? { ...s, ...data } : s));
+  async function saveStaff(data) {
+    const editId = modal && modal.editId ? modal.editId : null;
+    try {
+      await onSaveStaff(data, editId);
+      setModal(null);
+    } catch (e) {
+      alert(e.message || 'Saqlashda xatolik');
     }
-    setModal(null);
   }
 
-  function removeStaff(id) {
+  async function removeStaff(id) {
     if (!confirm('Ushbu xodimni oʻchirishni xohlaysizmi?')) return;
-    setStaff(list => list.filter(s => s.id !== id));
+    try { await onRemoveStaff(id); } catch (e) { alert(e.message || 'Oʻchirishda xatolik'); }
   }
 
   const editing = modal && modal.editId ? staff.find(s => s.id === modal.editId) : null;
@@ -65,7 +65,7 @@ export default function StaffScreen({ staff, setStaff }) {
     <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Xodimlar"
-        subtitle={`${staff.length} ta xodim · ${ZONES.length} ta zona`}
+        subtitle={`${staff.length} ta xodim · ${zonesCount} ta zona`}
         actions={
           <>
             <Button variant="outline" icon="Upload">CSV import</Button>

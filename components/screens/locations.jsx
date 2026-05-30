@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Icon } from '../Icon';
 import { Card, Button, Badge, Avatar, Drawer, Modal, Field, Input, Select, PageHeader, EmptyState } from '../ui';
 import {
-  ORDERS,
   TABLE_STATUS_META,
   formatUZS, formatUZSShort, timeAgo,
 } from '@/lib/data';
@@ -202,9 +201,10 @@ function TableCard({ table, zone, info, onClick }) {
   );
 }
 
-function TableDetail({ table, zone, info, onClose, onMarkClean, onNavigateOrders }) {
+function TableDetail({ table, zone, info, orders = [], onClose, onMarkClean, onNavigateOrders }) {
   const meta = TABLE_STATUS_META[info.status];
   const order = info.order;
+  const tableOrders = orders.filter(o => o.tableId === table.id);
 
   return (
     <div className="p-4 sm:p-5 space-y-5">
@@ -266,15 +266,15 @@ function TableDetail({ table, zone, info, onClose, onMarkClean, onNavigateOrders
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-lg bg-ink-50 p-3 text-center">
             <div className="text-[10px] uppercase tracking-wider text-ink-400 font-semibold">Buyurtma</div>
-            <div className="mt-1 text-xl font-bold num text-ink-900">{ORDERS.filter(o => o.tableId === table.id).length}</div>
+            <div className="mt-1 text-xl font-bold num text-ink-900">{tableOrders.length}</div>
           </div>
           <div className="rounded-lg bg-ink-50 p-3 text-center">
             <div className="text-[10px] uppercase tracking-wider text-ink-400 font-semibold">Tushum</div>
-            <div className="mt-1 text-xl font-bold num text-ink-900">{formatUZSShort(ORDERS.filter(o => o.tableId === table.id && o.status !== 'cancelled').reduce((s, o) => s + o.total, 0))}</div>
+            <div className="mt-1 text-xl font-bold num text-ink-900">{formatUZSShort(tableOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + o.total, 0))}</div>
           </div>
           <div className="rounded-lg bg-ink-50 p-3 text-center">
             <div className="text-[10px] uppercase tracking-wider text-ink-400 font-semibold">Mijoz</div>
-            <div className="mt-1 text-xl font-bold num text-ink-900">{ORDERS.filter(o => o.tableId === table.id).reduce((s, o) => s + Math.min(table.seats, 1 + Math.floor(o.itemCount / 2)), 0)}</div>
+            <div className="mt-1 text-xl font-bold num text-ink-900">{tableOrders.reduce((s, o) => s + Math.min(table.seats, 1 + Math.floor(o.itemCount / 2)), 0)}</div>
           </div>
         </div>
       </div>
@@ -282,19 +282,16 @@ function TableDetail({ table, zone, info, onClose, onMarkClean, onNavigateOrders
   );
 }
 
-export default function LocationsScreen({ orders, staff, zones, setZones, tables, setTables, onNavigate }) {
+export default function LocationsScreen({ orders, zones, tables, onAddZone, onAddTable, onSetTableStatus, onNavigate }) {
   const [zoneFilter, setZoneFilter]     = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [openTableId, setOpenTableId]   = useState(null);
-  const [tableOverrides, setTableOverrides] = useState({});
   const [addTableModal, setAddTableModal]   = useState(false);
   const [addZoneModal, setAddZoneModal]     = useState(false);
 
   function getTableStatus(tableId) {
-    const active = orders.find(o => o.tableId === tableId && (o.status === 'open' || o.status === 'in_progress' || o.status === 'ready'));
+    const active = orders.find(o => o.tableId === tableId && (o.status === 'preparing' || o.status === 'delivered'));
     if (active) return { status: 'occupied', order: active };
-    const override = tableOverrides[tableId];
-    if (override) return { status: override };
     const t = tables.find(t => t.id === tableId);
     return { status: t?.initStatus || 'free' };
   }
@@ -320,26 +317,18 @@ export default function LocationsScreen({ orders, staff, zones, setZones, tables
 
   const openEntry = openTableId ? tablesWithInfo.find(x => x.table.id === openTableId) : null;
 
-  function setStatus(tableId, status) {
-    setTableOverrides(s => ({ ...s, [tableId]: status }));
+  async function setStatus(tableId, status) {
+    try { await onSetTableStatus(tableId, status); } catch (e) { alert(e.message || 'Xatolik'); }
   }
 
-  function handleAddZone(data) {
-    const id = `z${Date.now()}`;
-    setZones(list => [...list, { id, ...data }]);
-    setAddZoneModal(false);
+  async function handleAddZone(data) {
+    try { await onAddZone(data); setAddZoneModal(false); }
+    catch (e) { alert(e.message || 'Zona qoʻshishda xatolik'); }
   }
 
-  function handleAddTable({ zoneId, seats, count = 1 }) {
-    const inZone = tables.filter(t => t.zoneId === zoneId);
-    let nextNumber = inZone.length > 0 ? Math.max(...inZone.map(t => t.number)) + 1 : 1;
-    const stamp = Date.now();
-    const added = [];
-    for (let i = 0; i < count; i++) {
-      added.push({ id: `t${stamp}-${i}`, zoneId, number: nextNumber++, seats });
-    }
-    setTables(list => [...list, ...added]);
-    setAddTableModal(false);
+  async function handleAddTable({ zoneId, seats, count = 1 }) {
+    try { await onAddTable({ zoneId, seats, count }); setAddTableModal(false); }
+    catch (e) { alert(e.message || 'Stol qoʻshishda xatolik'); }
   }
 
   return (
@@ -494,6 +483,7 @@ export default function LocationsScreen({ orders, staff, zones, setZones, tables
           table={openEntry.table}
           zone={openEntry.zone}
           info={openEntry.info}
+          orders={orders}
           onClose={() => setOpenTableId(null)}
           onNavigateOrders={() => onNavigate && onNavigate('orders')}
           onMarkClean={() => { setStatus(openEntry.table.id, 'free'); setOpenTableId(null); }}

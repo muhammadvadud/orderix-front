@@ -75,11 +75,12 @@ function CategoryForm({ onSave, onCancel }) {
   );
 }
 
-export default function MenuScreen({ menu, setMenu, categories, setCategories }) {
+export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem, onAddCategory }) {
   const [activeCat, setActiveCat] = useState('all');
   const [modal, setModal]         = useState(null);
   const [catModal, setCatModal]   = useState(false);
   const [search, setSearch]       = useState('');
+  const [busy, setBusy]           = useState(false);
 
   const filtered = menu.filter(m => {
     if (activeCat !== 'all' && m.category !== activeCat) return false;
@@ -89,20 +90,33 @@ export default function MenuScreen({ menu, setMenu, categories, setCategories })
 
   function countFor(catId) { return menu.filter(m => m.category === catId).length; }
 
-  function saveItem(item) {
-    if (modal === 'add' || !modal.editId) {
-      setMenu(list => [...list, { ...item, id: `m${Date.now()}` }]);
-    } else {
-      setMenu(list => list.map(m => m.id === modal.editId ? { ...m, ...item } : m));
+  async function saveItem(item) {
+    const editId = modal && modal.editId ? modal.editId : null;
+    setBusy(true);
+    try {
+      await onSaveItem(item, editId);
+      setModal(null);
+    } catch (e) {
+      alert(e.message || 'Saqlashda xatolik');
+    } finally {
+      setBusy(false);
     }
-    setModal(null);
   }
 
-  function deleteItem(id) { setMenu(list => list.filter(m => m.id !== id)); }
+  async function deleteItem(id) {
+    try { await onDeleteItem(id); } catch (e) { alert(e.message || 'Oʻchirishda xatolik'); }
+  }
 
-  function addCategory({ name, icon }) {
-    setCategories(list => [...list, { id: `c${Date.now()}`, name, short: name.slice(0, 12), icon }]);
-    setCatModal(false);
+  async function addCategory(data) {
+    setBusy(true);
+    try {
+      await onAddCategory(data);
+      setCatModal(false);
+    } catch (e) {
+      alert(e.message || 'Kategoriya qoʻshishda xatolik');
+    } finally {
+      setBusy(false);
+    }
   }
 
   const editing = modal && modal.editId ? menu.find(m => m.id === modal.editId) : null;
