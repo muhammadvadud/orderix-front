@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Icon } from '../Icon';
 import { LoginField, PasswordInput, Btn } from './login-ui';
+import { loginPassword } from '@/lib/services';
 
 export default function PasswordForm({ onSuccess }) {
   const [username, setUsername] = useState('');
@@ -10,7 +11,7 @@ export default function PasswordForm({ onSuccess }) {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
 
-  function submit(e) {
+  async function submit(e) {
     e && e.preventDefault();
     setError(null);
     if (!username.trim() || !password) {
@@ -18,10 +19,14 @@ export default function PasswordForm({ onSuccess }) {
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const data = await loginPassword(username, password);
+      onSuccess({ ...data, method: 'password', remember });
+    } catch (err) {
+      setError(err.message || 'Telefon raqam yoki parol notoʻgʻri');
+    } finally {
       setLoading(false);
-      onSuccess({ method: 'password', username, remember });
-    }, 900);
+    }
   }
 
   return (
@@ -57,7 +62,7 @@ export default function PasswordForm({ onSuccess }) {
       <Btn type="submit" loading={loading} iconRight="ArrowRight">Kirish</Btn>
 
       <div className="text-center text-xs text-ink-500">
-        Demo: istalgan foydalanuvchi va parol bilan kiring
+        Telefon raqamingiz va parolingiz bilan kiring
       </div>
     </form>
   );

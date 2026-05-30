@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Icon } from '../Icon';
 import { LoginField, PhoneInput, Btn } from './login-ui';
+import { otpRequest, otpVerify } from '@/lib/services';
 
 const BOT_HANDLE = '@OrderiX_AuthBot';
 
@@ -85,28 +86,35 @@ export default function TelegramForm({ onSuccess }) {
     return () => clearTimeout(t);
   }, [resendIn]);
 
-  function sendCode() {
+  async function sendCode() {
     setError(null);
     const digits = phone.replace(/\D/g, '');
     if (digits.length !== 9) { setError('Telefon raqamni toʻliq kiriting'); return; }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const generated = String(Math.floor(100000 + Math.random() * 900000));
-      setDemoCode(generated);
+    try {
+      const data = await otpRequest('+998' + digits);
+      setDemoCode(data?.code || null);
       setResendIn(45);
       setStep('otp');
-    }, 900);
+    } catch (err) {
+      setError(err.message || 'Kod yuborishda xatolik');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function verify() {
+  async function verify() {
     setError(null);
     if (code.length !== 6) { setError('6 xonali kodni kiriting'); return; }
     setVerifying(true);
-    setTimeout(() => {
+    try {
+      const digits = phone.replace(/\D/g, '');
+      const data = await otpVerify('+998' + digits, code);
+      onSuccess({ ...data, method: 'telegram' });
+    } catch (err) {
+      setError(err.message || 'Kod notoʻgʻri');
       setVerifying(false);
-      onSuccess({ method: 'telegram', phone: '+998 ' + formatPhone(phone) });
-    }, 900);
+    }
   }
 
   useEffect(() => {

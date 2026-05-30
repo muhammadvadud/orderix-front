@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 import { Logo, Btn } from './login/login-ui';
 import PasswordForm from './login/login-pwd';
 import TelegramForm from './login/login-otp';
+import { hydrateSession } from '@/lib/services';
 
 function BrandPanel() {
   return (
@@ -160,19 +161,26 @@ export default function LoginApp() {
   const [success, setSuccess] = useState(null);
   const [role, setRole]       = useState('manager');
 
-  function handleSuccess(payload) {
-    try {
-      localStorage.setItem('orderix_session', JSON.stringify({
-        ...payload,
-        role,
-        loginAt: new Date().toISOString(),
-      }));
-    } catch (e) {}
+  async function handleSuccess(payload) {
+    // payload = { access, refresh, user, method }
+    const session = await hydrateSession({
+      access: payload.access,
+      refresh: payload.refresh,
+      user: payload.user,
+      loginAt: new Date().toISOString(),
+    });
+    const backendRole = session?.user?.role;
+    if (backendRole) setRole(backendRole === 'waiter' ? 'waiter' : 'manager');
     setSuccess(payload);
   }
 
   function goToApp() {
-    router.push(role === 'waiter' ? '/waiter' : '/');
+    const backendRole = (() => {
+      try { return JSON.parse(localStorage.getItem('orderix_session') || '{}')?.user?.role; }
+      catch { return null; }
+    })();
+    const target = backendRole === 'waiter' ? '/waiter' : (backendRole ? '/' : (role === 'waiter' ? '/waiter' : '/'));
+    router.push(target);
   }
 
   function handleDemoSelect(selectedRole) {
