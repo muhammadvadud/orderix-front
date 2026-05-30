@@ -457,7 +457,7 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
                         <div className="flex gap-1.5 mt-2">
                           {Object.entries(ITEM_STATUS_META).map(([key, meta]) => (
                             <button key={key}
-                              onClick={() => onChangeItemStatus(order.id, it.menuId, key)}
+                              onClick={() => onChangeItemStatus(order.id, it.itemId, key)}
                               className="flex-1 py-1 rounded-lg text-[11px] font-semibold border transition inline-flex items-center justify-center gap-1"
                               style={it.status === key
                                 ? { background: meta.dot, color: '#fff', borderColor: meta.dot }

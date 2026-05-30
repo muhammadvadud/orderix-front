@@ -1,7 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { WAITER, INITIAL_ORDERS, HISTORY_ORDERS, TABLES, WAITER_COLORS, nextAction } from '../lib/waiter-data';
+import { WAITER, TABLES, WAITER_COLORS, nextAction, setWaiterData } from '../lib/waiter-data';
+import { getSession, clearSession } from '@/lib/api';
+import * as svc from '@/lib/services';
 import {
   MyOrdersScreen, NewOrderScreen, TablesScreen, ProfileScreen,
   HistoryScreen, OrderDetailSheet, Toast,
@@ -20,10 +22,26 @@ const NAV_ITEMS = [
   { id: 'profile', label: 'Profil',         Ico: User },
 ];
 
+const CAT_ICONS = new Set(['Wheat', 'Flame', 'Salad', 'Utensils', 'CupSoda', 'IceCream']);
+
+// manager-adapter buyurtmasini waiter shakliga o'tkazadi
+function toWaiterOrder(o) {
+  return {
+    id: o.id,
+    tableId: o.tableId,
+    tableLabel: `${o.tableNumber}-stol · ${o.zone}`,
+    status: o.status,
+    createdAt: o.time.getTime(),
+    items: o.items.map(it => ({ menuId: it.menuId, qty: it.qty, status: it.status, itemId: it.id })),
+  };
+}
+
 export default function WaiterShell() {
   const router = useRouter();
   const [tab, setTab]           = useState('orders');
-  const [orders, setOrders]     = useState(() => [...HISTORY_ORDERS, ...INITIAL_ORDERS]);
+  const [orders, setOrders]     = useState([]);
+  const [ready, setReady]       = useState(false);
+  const [lookups, setLookups]   = useState({});
   const [openOrderId,     setOpenOrderId]     = useState(null);
   const [historyOrderId,  setHistoryOrderId]  = useState(null);
   const openOrder    = orders.find(o => o.id === openOrderId)    || null;
@@ -34,63 +52,120 @@ export default function WaiterShell() {
   const activeCount = orders.filter(o => o.status !== 'closed').length;
   const occupiedIds = new Set(orders.filter(o => o.status !== 'closed').map(o => o.tableId));
 
-  function advance(id) {
-    setOrders(os => os.map(o => {
-      if (o.id !== id) return o;
-      const a = nextAction(o.status);
-      if (!a) return o;
-      const items = a.next === 'delivered'
-        ? o.items.map(it => it.status !== 'cancelled' ? { ...it, status: 'delivered' } : it)
-        : o.items;
-      return { ...o, status: a.next, items };
-    }));
-    setToast('Buyurtma yangilandi');
-  }
+  const reloadOrders = useCallback(async (lk) => {
+    const raw = await svc.listOrders('', lk || lookups);
+    setOrders(raw.map(toWaiterOrder));
+  }, [lookups]);
 
-  function editOrderItems(id, newItems) {
-    setOrders(os => os.map(o => {
-      if (o.id !== id) return o;
-      const existingSt = {};
-      o.items.forEach(it => { existingSt[it.menuId] = it.status || 'preparing'; });
-      const updated = newItems.map(it => ({ ...it, status: existingSt[it.menuId] || 'preparing' }));
-      return { ...o, items: updated };
-    }));
-    setToast('Buyurtma tahrirlandi');
-  }
+  useEffect(() => {
+    const s = getSession();
+    if (!s?.access) { router.push('/login'); return; }
+    (async () => {
+      try {
+        const [cats, items, zt] = await Promise.all([
+          svc.listCategories(), svc.listMenuItems(), svc.listZonesAndTables(),
+        ]);
+        const zonesById = {}; zt.zones.forEach(z => { zonesById[z.id] = z; });
+        const tablesById = {}; zt.tables.forEach(t => { tablesById[t.id] = t; });
 
-  function changeItemStatus(orderId, menuId, newStatus) {
-    setOrders(os => os.map(o => {
-      if (o.id !== orderId) return o;
-      const newItems    = o.items.map(it => it.menuId === menuId ? { ...it, status: newStatus } : it);
-      const allDone     = newItems.every(it => it.status !== 'preparing');
-      const anyDelivered = newItems.some(it => it.status === 'delivered');
-      if (allDone && anyDelivered && o.status === 'preparing') {
-        setToast('Barcha taomlar yetkazildi');
-        return { ...o, items: newItems, status: 'delivered' };
+        setWaiterData({
+          menu: items.map(m => ({ id: m.id, cat: m.category, name: m.name, price: m.price, desc: '' })),
+          categories: cats.map(c => ({ id: c.id, name: c.name, icon: CAT_ICONS.has(c.icon) ? c.icon : 'Utensils' })),
+          tables: zt.tables.map(t => ({
+            id: t.id,
+            label: `${t.number}-stol`,
+            zone: zonesById[t.zoneId]?.name || '—',
+            seats: t.seats,
+            status: t.rawStatus === 'occupied'
+              ? 'occupied'
+              : ((t.initStatus === 'reserved' || t.initStatus === 'dirty') ? 'unavailable' : 'free'),
+          })),
+        });
+
+        const u = s.user || {};
+        let restaurantName = '';
+        try { restaurantName = (await svc.getSettings())?.restaurant_name || ''; } catch {}
+        let stats = {};
+        try { stats = await svc.waiterStats(); } catch {}
+        const name = u.full_name || u.username || 'Ofitsiant';
+        const initials = name.trim().split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
+        setWaiterData({ waiter: {
+          name, role: 'Ofitsiant', initials,
+          restaurant: restaurantName || 'OrderiX',
+          phone: u.phone_number || '',
+          shift: '—',
+          ordersToday: stats.orders_today ?? 0,
+          ordersWeek: stats.orders_week ?? 0,
+          revenueToday: Number(stats.revenue_today ?? 0),
+          rating: 5.0,
+        }});
+
+        const lk = { tablesById, zonesById, staffById: {} };
+        setLookups(lk);
+        await reloadOrders(lk);
+      } catch (e) {
+        console.error('Ofitsiant maʼlumotlarini yuklashda xatolik:', e);
+      } finally {
+        setReady(true);
       }
-      return { ...o, items: newItems };
-    }));
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function advance(id) {
+    const o = orders.find(x => x.id === id);
+    const a = o && nextAction(o.status);
+    if (!a) return;
+    try {
+      await svc.setOrderStatus(id, a.next, lookups);
+      await reloadOrders();
+      setToast('Buyurtma yangilandi');
+    } catch (e) { setToast(e.message || 'Xatolik'); }
   }
 
-  function placeOrder() {
-    const table = TABLES.find(t => t.id === draft.tableId);
-    const newOrder = {
-      id: 'o' + Date.now(),
-      tableId: draft.tableId,
-      tableLabel: `${table.label} · ${table.zone}`,
-      status: 'preparing',
-      createdAt: Date.now(),
-      items: draft.items.map(it => ({ ...it, status: 'preparing' })),
-    };
-    setOrders(os => [newOrder, ...os]);
-    setDraft({ step: 1, tableId: null, items: [] });
-    setTab('orders');
-    setToast('Buyurtma berildi · oshxonaga yuborildi');
+  async function editOrderItems(id, newItems) {
+    const items = newItems.map(it => ({ menu_item_id: it.menuId, quantity: it.qty }));
+    try {
+      await svc.replaceOrderItems(id, items, lookups);
+      await reloadOrders();
+      setToast('Buyurtma tahrirlandi');
+    } catch (e) { setToast(e.message || 'Tahrirlashda xatolik'); }
+  }
+
+  async function changeItemStatus(orderId, itemId, newStatus) {
+    try {
+      await svc.setOrderItemStatus(orderId, itemId, newStatus, lookups);
+      await reloadOrders();
+    } catch (e) { setToast(e.message || 'Xatolik'); }
+  }
+
+  async function placeOrder() {
+    const items = draft.items.map(it => ({ menu_item_id: it.menuId, quantity: it.qty }));
+    try {
+      await svc.createOrder({ location_id: draft.tableId, items }, lookups);
+      await reloadOrders();
+      setDraft({ step: 1, tableId: null, items: [] });
+      setTab('orders');
+      setToast('Buyurtma berildi · oshxonaga yuborildi');
+    } catch (e) {
+      setToast(e.message || 'Buyurtma berishda xatolik');
+    }
   }
 
   function handleLogout() {
-    try { localStorage.removeItem('orderix_session'); } catch (e) {}
+    clearSession();
     router.push('/login');
+  }
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen grid place-items-center" style={{ background: BG }}>
+        <div className="flex items-center gap-3 text-slate-500 text-sm">
+          <span className="w-4 h-4 rounded-full border-2 border-slate-200 animate-spin" style={{ borderTopColor: NAVY }} />
+          Yuklanmoqda…
+        </div>
+      </div>
+    );
   }
 
   return (
