@@ -2,16 +2,11 @@
 import { useState } from 'react';
 import { Card, Button, IconButton, Avatar, RoleBadge, Input, Select, Modal, Field, PageHeader, EmptyRow, EmptyState } from '../ui';
 import { formatDate } from '@/lib/data';
-
-// '+' va bo'shliqlarni tashlab, O'zbekiston formatini tekshiramiz: 998 + 9 raqam
-function isValidPhone(phone) {
-  const digits = (phone || '').replace(/[\s+]/g, '');
-  return /^998\d{9}$/.test(digits);
-}
+import { isValidPhone, formatPhone, formatPhoneInput } from '@/lib/phone';
 
 function StaffForm({ initial, roles = [], onSave, onCancel }) {
   const [name, setName]   = useState(initial?.name || '');
-  const [phone, setPhone] = useState(initial?.phone || '+998 ');
+  const [phone, setPhone] = useState(initial?.phone ? formatPhone(initial.phone) : '+998 ');
   const [role, setRole]   = useState(initial?.role || roles[0]?.value || '');
 
   const phoneOk = isValidPhone(phone);
@@ -24,7 +19,7 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
       </Field>
       <Field label="Telefon">
         <Input value={phone}
-               onChange={e => setPhone(e.target.value.replace(/[^\d+\s]/g, ''))}
+               onChange={e => setPhone(formatPhoneInput(e.target.value))}
                icon="Phone" placeholder="+998 …" />
         {showPhoneError && (
           <div className="text-[11px] text-danger mt-1">Telefon raqami toʻliq emas. Masalan: +998 90 123 45 67</div>
