@@ -220,7 +220,8 @@ function OrderDetail({ order, menu = [], categories = [], serviceRate = 0.1, onC
                   </div>
                   <div className="text-sm num font-semibold text-ink-900 whitespace-nowrap shrink-0">{formatUZSShort(it.price * it.qty)}</div>
                 </div>
-                {/* Per-item status buttons */}
+                {/* Per-item status buttons — yopilgan/bekor qilingan buyurtmada yashiriladi */}
+                {canEdit && (
                 <div className="flex gap-1 mt-2">
                   {Object.entries(ITEM_STATUS_META).map(([key, meta]) => (
                     <button key={key}
@@ -236,6 +237,7 @@ function OrderDetail({ order, menu = [], categories = [], serviceRate = 0.1, onC
                     </button>
                   ))}
                 </div>
+                )}
               </div>
             );
           })}

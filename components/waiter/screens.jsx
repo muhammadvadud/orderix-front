@@ -256,7 +256,7 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
 
   if (!order) return null;
 
-  const canEdit = !readOnly && order.status !== 'closed';
+  const canEdit = !readOnly && order.status !== 'closed' && order.status !== 'cancelled';
   const action  = readOnly ? null : nextAction(order.status);
 
   function startEdit() {
@@ -439,8 +439,8 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
                           </div>
                         </div>
                       </div>
-                      {/* Per-item status buttons — hidden in readOnly mode */}
-                      {!readOnly && (
+                      {/* Per-item status buttons — yopilgan/bekor qilingan yoki readOnly'da yashiriladi */}
+                      {canEdit && (
                         <div className="flex gap-1.5 mt-2">
                           {Object.entries(ITEM_STATUS_META).map(([key, meta]) => (
                             <button key={key}
