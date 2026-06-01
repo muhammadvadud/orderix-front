@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from './Icon';
 import { STATUS_META } from '@/lib/data';
+import { textColorFor } from '@/lib/colors';
 
 export function Badge({ status, size = 'md' }) {
   const meta = STATUS_META[status] || STATUS_META.closed;
@@ -43,8 +44,8 @@ export function Trend({ value, positive }) {
 
 export function Avatar({ initials, color = '#1F4E79', size = 32, ring = false }) {
   return (
-    <div className={`inline-flex items-center justify-center rounded-full font-semibold text-white shrink-0 ${ring ? 'ring-2 ring-white' : ''}`}
-         style={{ background: color, width: size, height: size, fontSize: size * 0.38 }}>
+    <div className={`inline-flex items-center justify-center rounded-full font-semibold shrink-0 ${ring ? 'ring-2 ring-white' : ''}`}
+         style={{ background: color, color: textColorFor(color), width: size, height: size, fontSize: size * 0.38 }}>
       {initials}
     </div>
   );
