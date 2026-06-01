@@ -73,7 +73,14 @@ export default function AppShell() {
   // Realtime: backend resurs o'zgarishini bildirsa, tegishli ma'lumot qayta yuklanadi.
   // rtRef orqali eng so'nggi handler ishlatiladi — ulanish token o'zgarmaguncha qayta ochilmaydi.
   const rtRef = useRef({});
-  rtRef.current.orders = () => { reloadOrders(); setReportsRefresh(n => n + 1); };
+  rtRef.current.orders = () => {
+    reloadOrders();
+    setReportsRefresh(n => n + 1);
+    // Ochiq buyurtma oynasi ham yangilansin (status boshqa joyda o'zgargan bo'lishi mumkin)
+    if (openOrderId != null) {
+      svc.getOrder(openOrderId, lookups).then(setOrderDetail).catch(() => {});
+    }
+  };
   rtRef.current.locations = async () => {
     const zt = await svc.listZonesAndTables();
     setZones(zt.zones); setTables(zt.tables);

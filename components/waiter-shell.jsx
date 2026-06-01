@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { WAITER, TABLES, WAITER_COLORS, nextAction, setWaiterData } from '../lib/waiter-data';
 import { getSession, clearSession } from '@/lib/api';
+import { connectRealtime } from '@/lib/realtime';
 import * as svc from '@/lib/services';
 import {
   MyOrdersScreen, NewOrderScreen, TablesScreen, ProfileScreen,
@@ -39,6 +40,22 @@ function toWaiterOrder(o) {
   };
 }
 
+// Backend zona/stollaridan waiter ko'rinishidagi stollar va lookup'larni quradi
+function buildZonesTables(zt) {
+  const zonesById = {}; zt.zones.forEach(z => { zonesById[z.id] = z; });
+  const tablesById = {}; zt.tables.forEach(t => { tablesById[t.id] = t; });
+  const tables = zt.tables.map(t => ({
+    id: t.id,
+    label: `${t.number}-stol`,
+    zone: zonesById[t.zoneId]?.name || '—',
+    seats: t.seats,
+    status: t.rawStatus === 'occupied'
+      ? 'occupied'
+      : ((t.initStatus === 'reserved' || t.initStatus === 'dirty') ? 'unavailable' : 'free'),
+  }));
+  return { tables, zonesById, tablesById };
+}
+
 export default function WaiterShell() {
   const router = useRouter();
   const [tab, setTab]           = useState('orders');
@@ -53,6 +70,7 @@ export default function WaiterShell() {
   const historyOrder = (orderDetail && orderDetail.id === historyOrderId) ? orderDetail : (orders.find(o => o.id === historyOrderId) || null);
   const [toast, setToast]       = useState(null);
   const [draft, setDraft]       = useState({ step: 1, tableId: null, items: [] });
+  const [, forceRender]         = useState(0);
 
   const activeCount = orders.filter(o => o.status !== 'closed').length;
   const occupiedIds = new Set(orders.filter(o => o.status !== 'closed').map(o => o.tableId));
@@ -75,6 +93,33 @@ export default function WaiterShell() {
   function openActive(id)  { setHistoryOrderId(null); setOpenOrderId(id);    loadDetail(id); }
   function openHistory(id) { setOpenOrderId(null);    setHistoryOrderId(id); loadDetail(id); }
 
+  // Joylar (stollar/zonalar) o'zgarganda qayta yuklab, qayta render qilamiz.
+  const reloadZonesTables = useCallback(async () => {
+    const zt = await svc.listZonesAndTables();
+    const { tables, zonesById, tablesById } = buildZonesTables(zt);
+    setWaiterData({ tables });
+    setLookups(lk => ({ ...lk, zonesById, tablesById }));
+    forceRender(v => v + 1);
+  }, []);
+
+  // Realtime: backend resurs o'zgarishini bildirsa, tegishli ma'lumot qayta yuklanadi.
+  // rtRef orqali eng so'nggi handler ishlatiladi — ulanish bir marta ochiladi.
+  const rtRef = useRef({});
+  rtRef.current.orders = () => {
+    reloadOrders();
+    const openId = openOrderId ?? historyOrderId;
+    if (openId != null) loadDetail(openId);
+  };
+  rtRef.current.locations = () => { reloadZonesTables(); };
+  useEffect(() => {
+    if (!getSession()?.access) return undefined;
+    return connectRealtime((resource) => {
+      const handler = rtRef.current[resource];
+      if (handler) handler();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const s = getSession();
     if (!s?.access) { router.push('/login'); return; }
@@ -83,21 +128,12 @@ export default function WaiterShell() {
         const [cats, items, zt] = await Promise.all([
           svc.listCategories(), svc.listMenuItems(), svc.listZonesAndTables(),
         ]);
-        const zonesById = {}; zt.zones.forEach(z => { zonesById[z.id] = z; });
-        const tablesById = {}; zt.tables.forEach(t => { tablesById[t.id] = t; });
+        const { tables, zonesById, tablesById } = buildZonesTables(zt);
 
         setWaiterData({
           menu: items.map(m => ({ id: m.id, cat: m.category, name: m.name, price: m.price, desc: '' })),
           categories: cats.map(c => ({ id: c.id, name: c.name, icon: CAT_ICONS.has(c.icon) ? c.icon : 'Utensils' })),
-          tables: zt.tables.map(t => ({
-            id: t.id,
-            label: `${t.number}-stol`,
-            zone: zonesById[t.zoneId]?.name || '—',
-            seats: t.seats,
-            status: t.rawStatus === 'occupied'
-              ? 'occupied'
-              : ((t.initStatus === 'reserved' || t.initStatus === 'dirty') ? 'unavailable' : 'free'),
-          })),
+          tables,
         });
 
         const u = s.user || {};
