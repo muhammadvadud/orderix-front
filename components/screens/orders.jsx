@@ -9,6 +9,30 @@ import {
   STATUSES, STATUS_META, ITEM_STATUS_META,
   formatUZS, formatUZSShort, formatTime, formatDate, timeAgo,
 } from '@/lib/data';
+import { downloadCSV, ordersToRows, dateStamp } from '@/lib/export';
+
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function withinRange(time, range, now) {
+  const t = time instanceof Date ? time : (time ? new Date(time) : null);
+  if (!t) return false;
+  if (range === 'today') return isSameDay(t, now);
+  if (range === 'yesterday') {
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    return isSameDay(t, y);
+  }
+  if (range === '7d') {
+    const c = new Date(now); c.setDate(now.getDate() - 6); c.setHours(0, 0, 0, 0);
+    return t >= c;
+  }
+  if (range === '30d') {
+    const c = new Date(now); c.setDate(now.getDate() - 29); c.setHours(0, 0, 0, 0);
+    return t >= c;
+  }
+  return true;
+}
 
 function OrderDetail({ order, menu = [], categories = [], serviceRate = 0.1, onChangeStatus, onEdit, onChangeItemStatus }) {
   const [editMode, setEditMode] = useState(false);
@@ -273,8 +297,13 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
 
   const waiters = staff.filter(s => s.roleRaw === 'waiter');
 
+  const dateFiltered = useMemo(() => {
+    const now = new Date();
+    return orders.filter(o => withinRange(o.time, dateRange, now));
+  }, [orders, dateRange]);
+
   const filtered = useMemo(() => {
-    let list = [...orders];
+    let list = [...dateFiltered];
     if (statusFilter) list = list.filter(o => o.status === statusFilter);
     if (waiterFilter) list = list.filter(o => o.waiterId === waiterFilter);
     if (query) {
@@ -298,7 +327,11 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
       return 0;
     });
     return list;
-  }, [orders, statusFilter, waiterFilter, query, sort]);
+  }, [dateFiltered, statusFilter, waiterFilter, query, sort]);
+
+  function exportCSV() {
+    downloadCSV(`buyurtmalar-${dateStamp()}.csv`, ordersToRows(filtered));
+  }
 
   // Detail API'dan kelgan to'liq buyurtma (taomlar bilan); kelguncha list'dagi qisqa nusxa.
   const open = (orderDetail && orderDetail.id === openOrderId)
@@ -346,7 +379,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
         subtitle={`Jami ${orders.length} dan ${filtered.length} ta koʻrsatilmoqda`}
         actions={
           <>
-            <Button variant="outline" icon="Download" size="md">CSV eksport</Button>
+            <Button variant="outline" icon="Download" size="md" onClick={exportCSV} disabled={filtered.length === 0}>CSV eksport</Button>
             <Button variant="primary" icon="Plus" size="md">Yangi buyurtma</Button>
           </>
         }
@@ -358,10 +391,10 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition ${
               !statusFilter ? 'bg-navy-700 text-white border-navy-700' : 'bg-white text-ink-600 border-ink-200'
             }`}>
-            Barchasi <span className="opacity-70">({orders.length})</span>
+            Barchasi <span className="opacity-70">({dateFiltered.length})</span>
           </button>
           {STATUSES.map(s => {
-            const count = orders.filter(o => o.status === s).length;
+            const count = dateFiltered.filter(o => o.status === s).length;
             const active = statusFilter === s;
             const meta = STATUS_META[s];
             return (

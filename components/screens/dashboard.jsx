@@ -7,6 +7,11 @@ import {
   formatUZSShort, formatTime, timeAgo,
 } from '@/lib/data';
 import { topItems } from '@/lib/services';
+import { downloadCSV, ordersToRows, dateStamp } from '@/lib/export';
+
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
 function StatCard({ icon, iconBg, iconFg, label, value, trend, sub }) {
   return (
@@ -210,7 +215,11 @@ function ActivityFeed({ orders }) {
 }
 
 export default function DashboardScreen({ orders, staff = [], userName = '', onOpenOrder, onNavigate, liveKey = 0 }) {
-  const today = orders;
+  const now = new Date();
+  const today = orders.filter(o => {
+    const t = o.time instanceof Date ? o.time : (o.time ? new Date(o.time) : null);
+    return t ? isSameDay(t, now) : false;
+  });
   const openCount = today.filter(o => o.status === 'preparing').length;
   const revenue = today.filter(o => o.status !== 'preparing' && o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
   const waiterIds = new Set(today.map(o => o.waiterId));
@@ -227,6 +236,10 @@ export default function DashboardScreen({ orders, staff = [], userName = '', onO
   }, [liveKey]);
   const firstName = (userName || '').split(' ')[0] || 'foydalanuvchi';
 
+  function exportToday() {
+    downloadCSV(`buyurtmalar-${dateStamp()}.csv`, ordersToRows(today));
+  }
+
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
@@ -234,7 +247,7 @@ export default function DashboardScreen({ orders, staff = [], userName = '', onO
         subtitle="Bugun restoranlaringizdagi vaziyat."
         actions={
           <>
-            <Button variant="outline" icon="Download" size="md">Eksport</Button>
+            <Button variant="outline" icon="Download" size="md" onClick={exportToday} disabled={today.length === 0}>Eksport</Button>
             <Button variant="primary" icon="Plus" size="md">Yangi buyurtma</Button>
           </>
         }
@@ -260,7 +273,7 @@ export default function DashboardScreen({ orders, staff = [], userName = '', onO
 
       <div className="lg:hidden mt-4 grid grid-cols-2 gap-3">
         <Button variant="primary" icon="Plus" fullWidth>Yangi buyurtma</Button>
-        <Button variant="outline" icon="Download" fullWidth>Eksport</Button>
+        <Button variant="outline" icon="Download" fullWidth onClick={exportToday} disabled={today.length === 0}>Eksport</Button>
       </div>
 
       <div className="flex flex-col xl:grid xl:grid-cols-3 gap-4 mt-4">
