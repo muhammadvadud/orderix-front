@@ -18,6 +18,10 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
   const [data, setData]     = useState([]);
   const [topList, setTopList] = useState([]);
 
+  // Kun (sana) yorliqlari ustma-ust tushmasligi uchun ko'rsatiladigan yorliqlar
+  // sonini cheklaymiz: kichik ekranda ~5 ta, kattada ~9 ta yorliq.
+  const tickStep = Math.max(0, Math.ceil(data.length / (isSmall ? 5 : 9)) - 1);
+
   const customRange = !!(dateFrom && dateTo);
   const periodLabel = customRange
     ? `${uzDateShort(dateFrom)} – ${uzDateShort(dateTo)}`
@@ -167,7 +171,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 4" stroke="#eef0f4" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={isSmall ? 5 : 3} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={tickStep} tickMargin={6} />
               <YAxis tickFormatter={v => formatUZSShort(v)} tick={{ fontSize: 9, fill: '#8a93a3' }} axisLine={false} tickLine={false} width={isSmall ? 62 : 78} />
               <Tooltip
                 contentStyle={tooltipStyle}
@@ -207,7 +211,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
             <ResponsiveContainer>
               <BarChart data={data} margin={{ top: 16, right: 6, bottom: 4, left: -16 }}>
                 <CartesianGrid strokeDasharray="3 4" stroke="#eef0f4" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={isSmall ? 5 : 3} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={tickStep} tickMargin={6} />
                 <YAxis tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} width={36} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#eef5fb' }}
                          labelStyle={{ color: '#5b6473', fontSize: 11, marginBottom: 4 }}
