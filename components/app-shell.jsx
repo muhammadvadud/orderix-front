@@ -278,7 +278,7 @@ export default function AppShell() {
             <StaffScreen staff={staff} roles={roles} zonesCount={zones.length} onSaveStaff={saveStaff} onRemoveStaff={removeStaff} />
           )}
           {screen === 'reports' && (
-            <ReportsScreen orders={orders} liveKey={reportsRefresh} />
+            <ReportsScreen orders={orders} menu={menu} liveKey={reportsRefresh} />
           )}
           {screen === 'settings' && (
             <SettingsScreen />

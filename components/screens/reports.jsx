@@ -8,15 +8,17 @@ import {
 import { Icon } from '../Icon';
 import { Card, Button, Select, Input, Trend, PageHeader, EmptyRow } from '../ui';
 import { formatUZS, formatUZSShort, uzDateShort } from '@/lib/data';
-import { seriesStats, topItems } from '@/lib/services';
+import { seriesStats, topItems, itemSeries } from '@/lib/services';
 
-export default function ReportsScreen({ orders, liveKey = 0 }) {
+export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
   const [range, setRange]   = useState('30d');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo]     = useState('');
   const [isSmall, setIsSmall] = useState(false);
   const [data, setData]     = useState([]);
   const [topList, setTopList] = useState([]);
+  const [itemId, setItemId]   = useState('');
+  const [itemData, setItemData] = useState([]);
 
   // Kun (sana) yorliqlari ustma-ust tushmasligi uchun ko'rsatiladigan yorliqlar
   // sonini cheklaymiz: kichik ekranda ~5 ta, kattada ~9 ta yorliq.
@@ -41,6 +43,21 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
       .catch(() => { if (active) setTopList([]); });
     return () => { active = false; };
   }, [range, dateFrom, dateTo, liveKey]);
+
+  // Tanlanmagan bo'lsa birinchi taomni standart qilamiz
+  useEffect(() => {
+    if (!itemId && menu.length) setItemId(String(menu[0].id));
+  }, [menu, itemId]);
+
+  // Tanlangan taomning kunlik sotuvi
+  useEffect(() => {
+    if (!itemId) { setItemData([]); return undefined; }
+    let active = true;
+    itemSeries({ menuItem: itemId, range, dateFrom, dateTo })
+      .then(d => { if (active) setItemData(d.map(x => ({ ...x, label: uzDateShort(x.date) }))); })
+      .catch(() => { if (active) setItemData([]); });
+    return () => { active = false; };
+  }, [itemId, range, dateFrom, dateTo, liveKey]);
 
   function onRangeChange(v) { setRange(v); setDateFrom(''); setDateTo(''); }
   function clearDates() { setDateFrom(''); setDateTo(''); }
@@ -259,6 +276,40 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
           </table>
         </Card>
       </div>
+
+      {/* Bitta taomning kunlik sotuvi */}
+      <Card className="mt-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
+          <div>
+            <h3 className="font-semibold text-ink-900">Taom boʻyicha kunlik sotuv</h3>
+            <p className="text-xs text-ink-500 mt-0.5">{periodLabel} · jami {itemData.reduce((s, d) => s + d.qty, 0)} dona</p>
+          </div>
+          <Select value={itemId} onChange={e => setItemId(e.target.value)}
+                  placeholder={menu.length ? undefined : 'Taom yoʻq'}
+                  options={menu.map(m => ({ value: String(m.id), label: m.name }))}
+                  className="w-full sm:w-56" />
+        </div>
+        {itemData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center text-center text-ink-400" style={{ height: isSmall ? 200 : 280 }}>
+            <Icon name="BarChart3" size={28} />
+            <div className="text-sm mt-2">Bu davr uchun maʼlumot yoʻq</div>
+          </div>
+        ) : (
+        <div style={{ width: '100%', height: isSmall ? 200 : 280 }}>
+          <ResponsiveContainer>
+            <BarChart data={itemData} margin={{ top: 16, right: 6, bottom: 4, left: -16 }}>
+              <CartesianGrid strokeDasharray="3 4" stroke="#eef0f4" vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={tickStep} tickMargin={6} />
+              <YAxis tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} width={36} allowDecimals={false} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#eef5fb' }}
+                       labelStyle={{ color: '#5b6473', fontSize: 11, marginBottom: 4 }}
+                       formatter={(v) => [v, 'dona']} />
+              <Bar dataKey="qty" fill="#1F4E79" radius={[4, 4, 0, 0]} maxBarSize={isSmall ? 12 : 22} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        )}
+      </Card>
     </div>
   );
 }
