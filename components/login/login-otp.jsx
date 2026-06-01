@@ -58,7 +58,7 @@ function OtpBoxes({ value, onChange, error }) {
           inputMode="numeric"
           maxLength={1}
           autoFocus={i === 0}
-          className={`w-11 sm:w-12 text-center text-xl sm:text-2xl font-bold num rounded-xl border-2 bg-white outline-none transition ${
+          className={`flex-1 min-w-0 max-w-[52px] text-center text-xl sm:text-2xl font-bold num rounded-xl border-2 bg-white outline-none transition ${
             error ? 'border-danger text-danger' :
             value[i] ? 'border-navy-700 text-navy-800' :
             'border-ink-200 text-ink-900 focus:border-accent focus:ring-2 focus:ring-accent/15'

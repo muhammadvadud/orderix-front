@@ -9,16 +9,15 @@ import { hydrateSession } from '@/lib/services';
 
 function BrandPanel() {
   return (
-    <div className="relative brand-bg overflow-hidden flex flex-col p-8 lg:p-12 text-white"
-         style={{ minHeight: 'auto' }}>
+    <div className="relative brand-bg overflow-hidden flex flex-col p-6 sm:p-8 lg:p-12 text-white lg:h-full">
       <div className="absolute inset-0 grid-overlay opacity-50" />
       <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-accent/30 blur-3xl" />
       <div className="absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-navy-500/30 blur-3xl" />
 
-      <div className="relative z-10 flex flex-col h-full">
+      <div className="relative z-10 flex flex-col w-full lg:h-full">
         <Logo mode="dark" size="lg" />
 
-        <div className="mt-auto pt-12">
+        <div className="hidden lg:block mt-12 xl:mt-16">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur border border-white/15 text-[11px] font-semibold uppercase tracking-wider">
             <span className="w-1.5 h-1.5 rounded-full bg-success" />
             Tizim faol · 3 ta filial onlayn
@@ -64,7 +63,7 @@ function BrandPanel() {
           </div>
         </div>
 
-        <div className="relative z-10 pt-12 flex items-center justify-between text-[11px] text-white/50">
+        <div className="hidden lg:flex relative z-10 mt-auto pt-12 items-center justify-between text-[11px] text-white/50">
           <span>© 2026 OrderiX. Barcha huquqlar himoyalangan.</span>
           <a href="#" className="hover:text-white/80">Yordam</a>
         </div>
@@ -154,7 +153,7 @@ export default function LoginApp() {
 
   return (
     <div className="min-h-screen lg:h-screen flex flex-col lg:flex-row bg-ink-50">
-      <div className="lg:w-[46%] lg:min-w-[440px] lg:max-w-[640px]">
+      <div className="lg:w-[46%] lg:min-w-[440px]">
         <BrandPanel />
       </div>
 
