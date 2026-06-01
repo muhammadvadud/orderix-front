@@ -1,6 +1,6 @@
 'use client';
 import { Icon } from '../Icon';
-import { Card, Button, Badge, Avatar, Trend, PageHeader } from '../ui';
+import { Card, Button, Badge, Avatar, Trend, PageHeader, EmptyState, EmptyRow } from '../ui';
 import {
   STATUSES, STATUS_META,
   topItemsFromOrders, formatUZSShort, formatTime, timeAgo,
@@ -42,7 +42,7 @@ function StatCard({ icon, iconBg, iconFg, label, value, trend, sub }) {
 }
 
 function TopItemsWidget({ items }) {
-  const max = Math.max(...items.map(i => i.qty));
+  const max = items.length ? Math.max(...items.map(i => i.qty)) : 0;
   const palette = ['#1F4E79', '#2E75B6', '#5786b3', '#8badcd', '#bcd0e4'];
   return (
     <Card>
@@ -53,6 +53,9 @@ function TopItemsWidget({ items }) {
         </div>
         <button className="text-xs text-accent font-medium hover:underline">Barchasi</button>
       </div>
+      {items.length === 0 ? (
+        <EmptyState icon="TrendingUp" text="Hali sotuvlar yoʻq" />
+      ) : (
       <div className="mt-4 space-y-3">
         {items.map((it, i) => {
           const pct = (it.qty / max) * 100;
@@ -72,6 +75,7 @@ function TopItemsWidget({ items }) {
           );
         })}
       </div>
+      )}
     </Card>
   );
 }
@@ -105,7 +109,9 @@ function LiveOrdersTable({ orders, onOpen, onNavigate }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100">
-            {recent.map(o => (
+            {recent.length === 0 ? (
+              <EmptyRow colSpan={7} icon="Receipt" text="Hozircha buyurtma yoʻq" />
+            ) : recent.map(o => (
               <tr key={o.id} className="hover:bg-ink-50/60 cursor-pointer transition-colors" onClick={() => onOpen(o.id)}>
                 <td className="px-5 py-3 font-mono font-semibold text-ink-900">{o.number}</td>
                 <td className="px-3 py-3">
@@ -132,7 +138,9 @@ function LiveOrdersTable({ orders, onOpen, onNavigate }) {
       </div>
 
       <div className="md:hidden divide-y divide-ink-100">
-        {recent.map(o => (
+        {recent.length === 0 ? (
+          <EmptyState icon="Receipt" text="Hozircha buyurtma yoʻq" />
+        ) : recent.map(o => (
           <button key={o.id} onClick={() => onOpen(o.id)}
             className="w-full px-4 py-3 flex items-center gap-3 text-left active:bg-ink-50">
             <Avatar initials={o.waiterAvatar} color={o.waiterColor} size={36} />
@@ -172,6 +180,9 @@ function ActivityFeed({ orders }) {
   return (
     <Card>
       <h3 className="font-semibold text-ink-900 mb-4">Soʻnggi harakatlar</h3>
+      {events.length === 0 ? (
+        <EmptyState icon="Activity" text="Hali harakatlar yoʻq" />
+      ) : (
       <ol className="relative space-y-4">
         <span className="absolute left-[15px] top-2 bottom-2 w-px bg-ink-100" />
         {events.map((e, i) => (
@@ -191,6 +202,7 @@ function ActivityFeed({ orders }) {
           </li>
         ))}
       </ol>
+      )}
     </Card>
   );
 }

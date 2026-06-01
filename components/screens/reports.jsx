@@ -5,7 +5,8 @@ import {
   XAxis, YAxis, Tooltip, CartesianGrid,
   ResponsiveContainer,
 } from 'recharts';
-import { Card, Button, Select, Trend, PageHeader } from '../ui';
+import { Icon } from '../Icon';
+import { Card, Button, Select, Trend, PageHeader, EmptyRow } from '../ui';
 import { topItemsFromOrders, formatUZS, formatUZSShort } from '@/lib/data';
 import { seriesStats } from '@/lib/services';
 
@@ -126,6 +127,12 @@ export default function ReportsScreen({ orders }) {
             </div>
           </div>
         </div>
+        {data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center text-center text-ink-400" style={{ height: isSmall ? 200 : 280 }}>
+            <Icon name="LineChart" size={28} />
+            <div className="text-sm mt-2">Bu davr uchun maʼlumot yoʻq</div>
+          </div>
+        ) : (
         <div style={{ width: '100%', height: isSmall ? 200 : 280 }}>
           <ResponsiveContainer>
             <AreaChart data={data} margin={{ top: 16, right: 6, bottom: 4, left: -12 }}>
@@ -149,6 +156,7 @@ export default function ReportsScreen({ orders }) {
             </AreaChart>
           </ResponsiveContainer>
         </div>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
@@ -165,6 +173,12 @@ export default function ReportsScreen({ orders }) {
               </div>
             </div>
           </div>
+          {data.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center text-ink-400" style={{ height: isSmall ? 200 : 280 }}>
+              <Icon name="BarChart3" size={28} />
+              <div className="text-sm mt-2">Bu davr uchun maʼlumot yoʻq</div>
+            </div>
+          ) : (
           <div style={{ width: '100%', height: isSmall ? 200 : 280 }}>
             <ResponsiveContainer>
               <BarChart data={data} margin={{ top: 16, right: 6, bottom: 4, left: -16 }}>
@@ -178,6 +192,7 @@ export default function ReportsScreen({ orders }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          )}
         </Card>
 
         <Card padding={false} className="xl:col-span-2">
@@ -198,7 +213,9 @@ export default function ReportsScreen({ orders }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
-              {topItems.map((it, i) => (
+              {topItems.length === 0 ? (
+                <EmptyRow colSpan={4} icon="UtensilsCrossed" text="Hali sotilgan taom yoʻq" />
+              ) : topItems.map((it, i) => (
                 <tr key={it.menuId} className="hover:bg-ink-50/60">
                   <td className="px-4 sm:px-5 py-2.5">
                     <span className={`inline-flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-bold ${
