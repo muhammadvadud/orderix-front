@@ -137,10 +137,7 @@ export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem,
         title="Menyu"
         subtitle={`${menu.length} ta taom · ${categories.length} ta kategoriya`}
         actions={
-          <>
-            <Button variant="outline" icon="Upload">Import</Button>
-            <Button variant="primary" icon="Plus" onClick={() => setModal('add')}>Taom qoʻshish</Button>
-          </>
+          <Button variant="primary" icon="Plus" onClick={() => setModal('add')}>Taom qoʻshish</Button>
         }
       />
 

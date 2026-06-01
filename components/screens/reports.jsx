@@ -9,6 +9,7 @@ import { Icon } from '../Icon';
 import { Card, Button, Select, Input, Trend, PageHeader, EmptyRow } from '../ui';
 import { formatUZS, formatUZSShort, uzDateShort } from '@/lib/data';
 import { seriesStats, topItems, itemSeries } from '@/lib/services';
+import { downloadCSV, seriesToRows, dateStamp } from '@/lib/export';
 
 export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
   const [range, setRange]   = useState('30d');
@@ -62,6 +63,10 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
   function onRangeChange(v) { setRange(v); setDateFrom(''); setDateTo(''); }
   function clearDates() { setDateFrom(''); setDateTo(''); }
 
+  function exportCSV() {
+    downloadCSV(`hisobot-${dateStamp()}.csv`, seriesToRows(data));
+  }
+
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
   const totalOrd = data.reduce((s, d) => s + d.orders, 0);
   const avgTicket = totalOrd ? Math.round(totalRev / totalOrd) : 0;
@@ -85,7 +90,7 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
       <PageHeader
         title="Hisobotlar"
         subtitle="Tushum, buyurtmalar va eng koʻp sotilgan taomlar"
-        actions={<Button variant="outline" icon="Download">PDF eksport</Button>}
+        actions={<Button variant="outline" icon="Download" onClick={exportCSV} disabled={data.length === 0}>CSV eksport</Button>}
       />
 
       <div className="lg:hidden mb-4">
