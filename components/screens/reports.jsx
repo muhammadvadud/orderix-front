@@ -6,7 +6,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Icon } from '../Icon';
-import { Card, Button, Select, Input, Trend, PageHeader, EmptyRow } from '../ui';
+import { Card, Button, Select, Input, PageHeader, EmptyRow } from '../ui';
 import { formatUZS, formatUZSShort, uzDateShort } from '@/lib/data';
 import { seriesStats, topItems, itemSeries } from '@/lib/services';
 import { exportXLSX, seriesToRows, dateStamp } from '@/lib/export';
@@ -70,11 +70,6 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
   const totalOrd = data.reduce((s, d) => s + d.orders, 0);
   const avgTicket = totalOrd ? Math.round(totalRev / totalOrd) : 0;
-  const last7 = data.slice(-7);
-  const prev7 = data.slice(-14, -7);
-  const wkRev = last7.reduce((s, d) => s + d.revenue, 0);
-  const prevWkRev = prev7.reduce((s, d) => s + d.revenue, 0);
-  const wkTrend = prevWkRev ? ((wkRev - prevWkRev) / prevWkRev * 100).toFixed(1) : '0';
 
   const tooltipStyle = {
     background: 'white',
@@ -129,7 +124,9 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
         <Card className="!p-4 sm:!p-5">
           <div className="flex items-center justify-between gap-2">
             <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Tushum</div>
-            <Trend value={+wkTrend} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#e6f6ec', color: '#1d7a44' }}>
+              <Icon name="Wallet" size={16} />
+            </div>
           </div>
           <div className="mt-2 text-lg sm:text-2xl font-bold num text-ink-900 leading-tight">
             {formatUZSShort(totalRev)} <span className="text-xs sm:text-sm text-ink-400 font-medium">soʻm</span>
@@ -138,7 +135,9 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
         <Card className="!p-4 sm:!p-5">
           <div className="flex items-center justify-between gap-2">
             <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Buyurtma</div>
-            <Trend value={6.3} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#d7e7f4', color: '#1F4E79' }}>
+              <Icon name="Receipt" size={16} />
+            </div>
           </div>
           <div className="mt-2 text-lg sm:text-2xl font-bold num text-ink-900 leading-tight">
             {totalOrd.toLocaleString().replace(/,/g, ' ')}
@@ -147,7 +146,9 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
         <Card className="!p-4 sm:!p-5">
           <div className="flex items-center justify-between gap-2">
             <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Oʻrtacha chek</div>
-            <Trend value={2.1} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#eef5fb', color: '#2E75B6' }}>
+              <Icon name="Coins" size={16} />
+            </div>
           </div>
           <div className="mt-2 text-lg sm:text-2xl font-bold num text-ink-900 leading-tight">
             {formatUZSShort(avgTicket)} <span className="text-xs sm:text-sm text-ink-400 font-medium">soʻm</span>
@@ -156,7 +157,9 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
         <Card className="!p-4 sm:!p-5">
           <div className="flex items-center justify-between gap-2">
             <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Tayyorlanmoqda</div>
-            <Trend value={-1.4} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#fdf1de', color: '#8a5a07' }}>
+              <Icon name="Clock" size={16} />
+            </div>
           </div>
           <div className="mt-2 text-lg sm:text-2xl font-bold num text-ink-900 leading-tight">
             {orders.filter(o => o.status === 'preparing').length}

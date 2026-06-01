@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Icon } from '../Icon';
-import { Card, Button, Badge, Avatar, Trend, PageHeader, EmptyState, EmptyRow } from '../ui';
+import { Card, Button, Badge, Avatar, PageHeader, EmptyState, EmptyRow } from '../ui';
 import {
   STATUSES, STATUS_META,
   formatUZSShort, formatTime, timeAgo,
@@ -13,7 +13,7 @@ function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-function StatCard({ icon, iconBg, iconFg, label, value, trend, sub }) {
+function StatCard({ icon, iconBg, iconFg, label, value, sub }) {
   return (
     <Card className="!p-3.5 sm:!p-5">
       {/* Mobile: horizontal compact layout */}
@@ -27,16 +27,14 @@ function StatCard({ icon, iconBg, iconFg, label, value, trend, sub }) {
           <div className="text-2xl font-bold text-ink-900 num leading-tight mt-0.5">{value}</div>
           {sub && <div className="text-[10.5px] text-ink-400 truncate mt-0.5">{sub}</div>}
         </div>
-        <Trend value={trend} />
       </div>
       {/* Desktop: vertical layout */}
       <div className="hidden sm:block">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start">
           <div className="w-10 h-10 rounded-lg flex items-center justify-center"
                style={{ background: iconBg, color: iconFg }}>
             <Icon name={icon} size={18} />
           </div>
-          <Trend value={trend} />
         </div>
         <div className="mt-4">
           <div className="text-xs font-medium uppercase tracking-wider text-ink-400">{label}</div>
@@ -260,14 +258,14 @@ export default function DashboardScreen({ orders, staff = [], userName = '', onO
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard icon="Receipt" iconBg="#d7e7f4" iconFg="#1F4E79"
-          label="Bugungi buyurtmalar" value={today.length} trend={12} sub="kechaga nisbatan" />
+          label="Bugungi buyurtmalar" value={today.length} sub="kechaga nisbatan" />
         <StatCard icon="Clock" iconBg="#fdf1de" iconFg="#8a5a07"
-          label="Tayyorlanmoqda" value={openCount} trend={-4}
+          label="Tayyorlanmoqda" value={openCount}
           sub={`${today.filter(o => o.status === 'delivered').length} yetkazildi · ${today.filter(o => o.status === 'closed').length} yopildi`} />
         <StatCard icon="Wallet" iconBg="#e6f6ec" iconFg="#1d7a44"
-          label="Bugungi tushum" value={formatUZSShort(revenue)} trend={8.4} sub="soʻm · sof tushum" />
+          label="Bugungi tushum" value={formatUZSShort(revenue)} sub="soʻm · sof tushum" />
         <StatCard icon="Users" iconBg="#1F4E790F" iconFg="#1F4E79"
-          label="Faol ofitsiantlar" value={waiterIds.size} trend={0}
+          label="Faol ofitsiantlar" value={waiterIds.size}
           sub={`${waiterCount} ta ofitsiant`} />
       </div>
 
