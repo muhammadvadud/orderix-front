@@ -38,6 +38,7 @@ function toWaiterOrder(o) {
     total: o.total,
     subtotal: o.subtotal,
     serviceFee: o.serviceFee,
+    serviceRate: o.serviceRate,
     items: o.items.map(it => ({ menuId: it.menuId, qty: it.qty, status: it.status, itemId: it.id, price: it.price })),
   };
 }

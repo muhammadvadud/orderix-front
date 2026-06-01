@@ -288,8 +288,10 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
   const sub     = orderSubtotal(order);
   const tot     = orderTotal(order);
   const svc     = (typeof order.serviceFee === 'number') ? order.serviceFee : Math.max(0, tot - sub);
+  // Tahrirlashda buyurtmaning o'z xizmat haqi (backend recalc ham shuni ishlatadi); bo'lmasa joriy sozlama
+  const editRate = (order.serviceRate != null ? order.serviceRate / 100 : SERVICE_RATE);
   const editSub = editItems.reduce((s, it) => s + ((it.price ?? findItem(it.menuId)?.price ?? 0) * it.qty), 0);
-  const editSvc = Math.round(editSub * SERVICE_RATE);
+  const editSvc = Math.round(editSub * editRate);
   const editTot = editSub + editSvc;
 
   return (
@@ -411,7 +413,7 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
               {/* Updated total */}
               <div className="rounded-2xl p-4 space-y-2" style={{ background: `${NAVY}0d` }}>
                 <Row k="Oraliq summa" v={formatSoum(editSub)} />
-                <Row k={`Xizmat haqi (${Math.round(SERVICE_RATE * 100)}%)`} v={formatSoum(editSvc)} />
+                <Row k={`Xizmat haqi (${Math.round(editRate * 100)}%)`} v={formatSoum(editSvc)} />
                 <div className="h-px bg-slate-200 my-1" />
                 <Row k="Jami" v={formatSoum(editTot)} bold />
               </div>
@@ -461,7 +463,7 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
               </div>
               <div className="rounded-2xl bg-slate-50 p-4 space-y-2">
                 <Row k="Oraliq summa" v={formatSoum(sub)} />
-                <Row k={`Xizmat haqi (${Math.round(SERVICE_RATE * 100)}%)`} v={formatSoum(svc)} />
+                <Row k={`Xizmat haqi (${Math.round(editRate * 100)}%)`} v={formatSoum(svc)} />
                 <div className="h-px bg-slate-200 my-1" />
                 <Row k="Jami" v={formatSoum(tot)} bold />
               </div>

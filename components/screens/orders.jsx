@@ -45,8 +45,10 @@ function OrderDetail({ order, menu = [], categories = [], serviceRate = 0.1, onC
     setEditMode(false);
   }
 
+  // Tahrirlashda buyurtmaning o'z xizmat haqidan foydalanamiz (backend recalc ham shuni ishlatadi)
+  const orderRate      = order.serviceRate != null ? order.serviceRate / 100 : serviceRate;
   const editSubtotal   = editItems.reduce((s, it) => s + it.price * it.qty, 0);
-  const editServiceFee = Math.round(editSubtotal * serviceRate);
+  const editServiceFee = Math.round(editSubtotal * orderRate);
   const editTotal      = editSubtotal + editServiceFee;
 
   if (editMode) {
@@ -127,7 +129,7 @@ function OrderDetail({ order, menu = [], categories = [], serviceRate = 0.1, onC
             <span className="num text-ink-900">{formatUZS(editSubtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-ink-600">Xizmat haqi ({Math.round(serviceRate * 100)}%)</span>
+            <span className="text-ink-600">Xizmat haqi ({Math.round(orderRate * 100)}%)</span>
             <span className="num text-ink-900">{formatUZS(editServiceFee)}</span>
           </div>
           <div className="h-px bg-navy-100" />
@@ -246,7 +248,7 @@ function OrderDetail({ order, menu = [], categories = [], serviceRate = 0.1, onC
           <span className="num text-ink-900">{formatUZS(order.subtotal)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-ink-600">Xizmat haqi ({Math.round(serviceRate * 100)}%)</span>
+          <span className="text-ink-600">Xizmat haqi ({Math.round(orderRate * 100)}%)</span>
           <span className="num text-ink-900">{formatUZS(order.serviceFee)}</span>
         </div>
         <div className="h-px bg-navy-100 my-1" />
