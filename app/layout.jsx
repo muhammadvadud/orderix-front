@@ -1,21 +1,4 @@
-import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
-
-const inter = Inter({
-  subsets: ['latin', 'latin-ext'],
-  weight: ['400', '500', '600', '700', '800'],
-  display: 'swap',
-  variable: '--font-inter',
-  preload: true,
-});
-
-const mono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500'],
-  display: 'swap',
-  variable: '--font-mono',
-  preload: false,
-});
 
 export const metadata = {
   title: 'OrderiX — Restaurant Management',
@@ -24,8 +7,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="uz" className={`${inter.variable} ${mono.variable}`}>
-      <body className={inter.className}>{children}</body>
+    <html lang="uz">
+      <head>
+        {/* Fontlar brauzerda yuklanadi — server (offline build) Google Fonts'ga chiqmaydi */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
