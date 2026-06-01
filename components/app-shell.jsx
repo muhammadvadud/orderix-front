@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar, MobileNavDrawer, BottomTabBar } from './sidebar';
 import { Topbar } from './topbar';
@@ -11,6 +11,7 @@ import StaffScreen from './screens/staff';
 import ReportsScreen from './screens/reports';
 import SettingsScreen from './screens/settings';
 import { getSession, clearSession } from '@/lib/api';
+import { connectRealtime } from '@/lib/realtime';
 import * as svc from '@/lib/services';
 
 export default function AppShell() {
@@ -28,6 +29,7 @@ export default function AppShell() {
   const [navOpen, setNavOpen]     = useState(false);
   const [loading, setLoading]     = useState(true);
   const [session, setSessionState] = useState(null);
+  const [reportsRefresh, setReportsRefresh] = useState(0);
 
   // Lookup maps for adapting orders
   const lookups = useMemo(() => {
@@ -67,6 +69,23 @@ export default function AppShell() {
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Realtime: backend resurs o'zgarishini bildirsa, tegishli ma'lumot qayta yuklanadi.
+  // rtRef orqali eng so'nggi handler ishlatiladi — ulanish token o'zgarmaguncha qayta ochilmaydi.
+  const rtRef = useRef({});
+  rtRef.current.orders = () => { reloadOrders(); setReportsRefresh(n => n + 1); };
+  rtRef.current.locations = async () => {
+    const zt = await svc.listZonesAndTables();
+    setZones(zt.zones); setTables(zt.tables);
+  };
+  useEffect(() => {
+    const token = session?.access;
+    if (!token) return undefined;
+    return connectRealtime((resource) => {
+      const handler = rtRef.current[resource];
+      if (handler) handler();
+    });
+  }, [session?.access]);
 
   const user = useMemo(() => {
     const u = session?.user || {};
@@ -247,7 +266,7 @@ export default function AppShell() {
             <StaffScreen staff={staff} roles={roles} zonesCount={zones.length} onSaveStaff={saveStaff} onRemoveStaff={removeStaff} />
           )}
           {screen === 'reports' && (
-            <ReportsScreen orders={orders} />
+            <ReportsScreen orders={orders} liveKey={reportsRefresh} />
           )}
           {screen === 'settings' && (
             <SettingsScreen />

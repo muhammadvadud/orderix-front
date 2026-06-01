@@ -10,7 +10,7 @@ import { Card, Button, Select, Trend, PageHeader, EmptyRow } from '../ui';
 import { topItemsFromOrders, formatUZS, formatUZSShort } from '@/lib/data';
 import { seriesStats } from '@/lib/services';
 
-export default function ReportsScreen({ orders }) {
+export default function ReportsScreen({ orders, liveKey = 0 }) {
   const [range, setRange]   = useState('30d');
   const [isSmall, setIsSmall] = useState(false);
   const [data, setData]     = useState([]);
@@ -25,7 +25,7 @@ export default function ReportsScreen({ orders }) {
       .then(d => { if (active) setData(d.map(x => ({ ...x, revenue: Number(x.revenue) || 0, orders: Number(x.orders) || 0 }))); })
       .catch(() => { if (active) setData([]); });
     return () => { active = false; };
-  }, [range]);
+  }, [range, liveKey]);
 
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
   const totalOrd = data.reduce((s, d) => s + d.orders, 0);
