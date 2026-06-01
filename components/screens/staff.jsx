@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { Card, Button, IconButton, Avatar, RoleBadge, Input, Select, Modal, Field, PageHeader, EmptyRow, EmptyState } from '../ui';
 import { formatDate } from '@/lib/data';
 
-function StaffForm({ initial, onSave, onCancel }) {
+function StaffForm({ initial, roles = [], onSave, onCancel }) {
   const [name, setName]   = useState(initial?.name || '');
   const [phone, setPhone] = useState(initial?.phone || '+998 ');
-  const [role, setRole]   = useState(initial?.role || 'Ofitsiant');
+  const [role, setRole]   = useState(initial?.role || roles[0]?.value || '');
 
   return (
     <div className="space-y-4">
@@ -18,12 +18,7 @@ function StaffForm({ initial, onSave, onCancel }) {
       </Field>
       <Field label="Lavozim">
         <Select value={role} onChange={e => setRole(e.target.value)}
-                options={[
-                  { value: 'Menejer',   label: 'Menejer' },
-                  { value: 'Ofitsiant', label: 'Ofitsiant' },
-                  { value: 'Oshpaz',    label: 'Oshpaz' },
-                  { value: 'Kassir',    label: 'Kassir' },
-                ]} />
+                options={roles.map(r => ({ value: r.value, label: r.label }))} />
       </Field>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Bekor qilish</Button>
@@ -33,7 +28,7 @@ function StaffForm({ initial, onSave, onCancel }) {
   );
 }
 
-export default function StaffScreen({ staff, zonesCount = 0, onSaveStaff, onRemoveStaff }) {
+export default function StaffScreen({ staff, roles = [], zonesCount = 0, onSaveStaff, onRemoveStaff }) {
   const [modal, setModal]         = useState(null);
   const [roleFilter, setRoleFilter] = useState('');
   const [query, setQuery]         = useState('');
@@ -104,12 +99,7 @@ export default function StaffScreen({ staff, zonesCount = 0, onSaveStaff, onRemo
                  value={query} onChange={e => setQuery(e.target.value)} className="flex-1 min-w-[180px]" />
           <Select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
                   placeholder="Barcha lavozimlar"
-                  options={[
-                    { value: 'Menejer',   label: 'Menejer' },
-                    { value: 'Ofitsiant', label: 'Ofitsiant' },
-                    { value: 'Oshpaz',    label: 'Oshpaz' },
-                    { value: 'Kassir',    label: 'Kassir' },
-                  ]}
+                  options={roles.map(r => ({ value: r.value, label: r.label }))}
                   className="w-40 sm:w-44" />
         </div>
       </Card>
@@ -178,7 +168,7 @@ export default function StaffScreen({ staff, zonesCount = 0, onSaveStaff, onRemo
       </Card>
 
       <Modal open={!!modal} onClose={() => setModal(null)} title={editing ? 'Xodimni tahrirlash' : 'Xodim qoʻshish'} width={460}>
-        {modal && <StaffForm initial={editing} onSave={saveStaff} onCancel={() => setModal(null)} />}
+        {modal && <StaffForm initial={editing} roles={roles} onSave={saveStaff} onCancel={() => setModal(null)} />}
       </Modal>
     </div>
   );

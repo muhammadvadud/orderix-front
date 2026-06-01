@@ -20,6 +20,7 @@ export default function AppShell() {
   const [menu, setMenu]           = useState([]);
   const [categories, setCategories] = useState([]);
   const [staff, setStaff]         = useState([]);
+  const [roles, setRoles]         = useState([]);
   const [zones, setZones]         = useState([]);
   const [tables, setTables]       = useState([]);
   const [openOrderId, setOpenOrderId] = useState(null);
@@ -46,10 +47,10 @@ export default function AppShell() {
     setSessionState(s);
     (async () => {
       try {
-        const [cats, items, st, zt] = await Promise.all([
-          svc.listCategories(), svc.listMenuItems(), svc.listStaff(), svc.listZonesAndTables(),
+        const [cats, items, st, zt, rls] = await Promise.all([
+          svc.listCategories(), svc.listMenuItems(), svc.listStaff(), svc.listZonesAndTables(), svc.listRoles(),
         ]);
-        setCategories(cats); setMenu(items); setStaff(st);
+        setCategories(cats); setMenu(items); setStaff(st); setRoles(rls);
         setZones(zt.zones); setTables(zt.tables);
 
         const tablesById = {}, zonesById = {}, staffById = {};
@@ -226,7 +227,7 @@ export default function AppShell() {
             />
           )}
           {screen === 'staff' && (
-            <StaffScreen staff={staff} zonesCount={zones.length} onSaveStaff={saveStaff} onRemoveStaff={removeStaff} />
+            <StaffScreen staff={staff} roles={roles} zonesCount={zones.length} onSaveStaff={saveStaff} onRemoveStaff={removeStaff} />
           )}
           {screen === 'reports' && (
             <ReportsScreen orders={orders} />
