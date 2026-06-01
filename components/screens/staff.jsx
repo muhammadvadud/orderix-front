@@ -3,10 +3,19 @@ import { useState } from 'react';
 import { Card, Button, IconButton, Avatar, RoleBadge, Input, Select, Modal, Field, PageHeader, EmptyRow, EmptyState } from '../ui';
 import { formatDate } from '@/lib/data';
 
+// '+' va bo'shliqlarni tashlab, O'zbekiston formatini tekshiramiz: 998 + 9 raqam
+function isValidPhone(phone) {
+  const digits = (phone || '').replace(/[\s+]/g, '');
+  return /^998\d{9}$/.test(digits);
+}
+
 function StaffForm({ initial, roles = [], onSave, onCancel }) {
   const [name, setName]   = useState(initial?.name || '');
   const [phone, setPhone] = useState(initial?.phone || '+998 ');
   const [role, setRole]   = useState(initial?.role || roles[0]?.value || '');
+
+  const phoneOk = isValidPhone(phone);
+  const showPhoneError = phone.replace(/[\s+]/g, '').length > 3 && !phoneOk;
 
   return (
     <div className="space-y-4">
@@ -14,7 +23,12 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
         <Input value={name} onChange={e => setName(e.target.value)} placeholder="masalan: Bobur Yusupov" />
       </Field>
       <Field label="Telefon">
-        <Input value={phone} onChange={e => setPhone(e.target.value)} icon="Phone" placeholder="+998 …" />
+        <Input value={phone}
+               onChange={e => setPhone(e.target.value.replace(/[^\d+\s]/g, ''))}
+               icon="Phone" placeholder="+998 …" />
+        {showPhoneError && (
+          <div className="text-[11px] text-danger mt-1">Telefon raqami toʻliq emas. Masalan: +998 90 123 45 67</div>
+        )}
       </Field>
       <Field label="Lavozim">
         <Select value={role} onChange={e => setRole(e.target.value)}
@@ -22,7 +36,7 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
       </Field>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Bekor qilish</Button>
-        <Button variant="primary" icon="Check" onClick={() => onSave({ name, phone, role })} disabled={!name.trim()}>Saqlash</Button>
+        <Button variant="primary" icon="Check" onClick={() => onSave({ name, phone, role })} disabled={!name.trim() || !phoneOk}>Saqlash</Button>
       </div>
     </div>
   );
