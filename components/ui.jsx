@@ -100,7 +100,7 @@ export function IconButton({ name, onClick, label, variant = 'ghost', size = 36,
   );
 }
 
-export function Input({ value, onChange, placeholder, icon, type = 'text', className = '', size = 'md' }) {
+export function Input({ value, onChange, placeholder, icon, type = 'text', className = '', size = 'md', ...rest }) {
   const sizes = { sm: 'h-9 text-xs', md: 'h-10 text-sm sm:h-9', lg: 'h-11 text-sm' };
   return (
     <div className={`relative ${className}`}>
@@ -114,6 +114,7 @@ export function Input({ value, onChange, placeholder, icon, type = 'text', class
         value={value ?? ''}
         onChange={onChange}
         placeholder={placeholder}
+        {...rest}
         className={`w-full ${sizes[size]} ${icon ? 'pl-9' : 'pl-3'} pr-3 rounded-lg border border-ink-200 bg-white text-ink-900 placeholder:text-ink-400 focus:border-accent focus:ring-2 focus:ring-accent/15 outline-none transition`}
       />
     </div>

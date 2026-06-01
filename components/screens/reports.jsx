@@ -7,13 +7,20 @@ import {
 } from 'recharts';
 import { Icon } from '../Icon';
 import { Card, Button, Select, Trend, PageHeader, EmptyRow } from '../ui';
-import { topItemsFromOrders, formatUZS, formatUZSShort } from '@/lib/data';
+import { topItemsFromOrders, formatUZS, formatUZSShort, uzDateShort } from '@/lib/data';
 import { seriesStats } from '@/lib/services';
 
 export default function ReportsScreen({ orders, liveKey = 0 }) {
   const [range, setRange]   = useState('30d');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo]     = useState('');
   const [isSmall, setIsSmall] = useState(false);
   const [data, setData]     = useState([]);
+
+  const customRange = !!(dateFrom && dateTo);
+  const periodLabel = customRange
+    ? `${uzDateShort(dateFrom)} – ${uzDateShort(dateTo)}`
+    : `Soʻnggi ${ { '7d': 7, '30d': 30, '90d': 90 }[range] || 30 } kun`;
 
   useEffect(() => {
     setIsSmall(window.innerWidth < 640);
@@ -21,11 +28,14 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
 
   useEffect(() => {
     let active = true;
-    seriesStats(range)
-      .then(d => { if (active) setData(d.map(x => ({ ...x, revenue: Number(x.revenue) || 0, orders: Number(x.orders) || 0 }))); })
+    seriesStats({ range, dateFrom, dateTo })
+      .then(d => { if (active) setData(d.map(x => ({ ...x, revenue: Number(x.revenue) || 0, orders: Number(x.orders) || 0, label: uzDateShort(x.date) }))); })
       .catch(() => { if (active) setData([]); });
     return () => { active = false; };
-  }, [range, liveKey]);
+  }, [range, dateFrom, dateTo, liveKey]);
+
+  function onRangeChange(v) { setRange(v); setDateFrom(''); setDateTo(''); }
+  function clearDates() { setDateFrom(''); setDateTo(''); }
 
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
   const totalOrd = data.reduce((s, d) => s + d.orders, 0);
@@ -52,33 +62,45 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
       <PageHeader
         title="Hisobotlar"
         subtitle="Tushum, buyurtmalar va eng koʻp sotilgan taomlar"
-        actions={
-          <>
-            <Select value={range} onChange={e => setRange(e.target.value)}
+        actions={<Button variant="outline" icon="Download">PDF eksport</Button>}
+      />
+
+      <div className="lg:hidden mb-4">
+        <h1 className="text-xl font-bold text-ink-900">Hisobotlar</h1>
+        <p className="text-xs text-ink-500 mt-0.5">{periodLabel}</p>
+      </div>
+
+      {/* Davr / sana bo'yicha filter */}
+      <Card className="!p-3 sm:!p-4 mb-4 sm:mb-5">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="w-full sm:w-auto">
+            <div className="text-[11px] font-medium text-ink-500 mb-1">Davr</div>
+            <Select value={customRange ? '' : range} onChange={e => onRangeChange(e.target.value)}
+                    placeholder={customRange ? 'Maxsus oraliq' : undefined}
                     options={[
                       { value: '7d', label: 'Soʻnggi 7 kun' },
                       { value: '30d', label: 'Soʻnggi 30 kun' },
                       { value: '90d', label: 'Soʻnggi 90 kun' },
-                    ]} className="w-40" />
-            <Button variant="outline" icon="Download">PDF eksport</Button>
-          </>
-        }
-      />
-
-      <div className="lg:hidden mb-4 flex items-center gap-2">
-        <Select value={range} onChange={e => setRange(e.target.value)}
-                options={[
-                  { value: '7d', label: '7 kun' },
-                  { value: '30d', label: '30 kun' },
-                  { value: '90d', label: '90 kun' },
-                ]} className="flex-1" />
-        <Button variant="outline" icon="Download" size="md">PDF</Button>
-      </div>
+                    ]} className="w-full sm:w-44" />
+          </div>
+          <div className="flex-1 min-w-[130px]">
+            <div className="text-[11px] font-medium text-ink-500 mb-1">Sanadan</div>
+            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={dateTo || undefined} />
+          </div>
+          <div className="flex-1 min-w-[130px]">
+            <div className="text-[11px] font-medium text-ink-500 mb-1">Sanagacha</div>
+            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} min={dateFrom || undefined} />
+          </div>
+          {(dateFrom || dateTo) && (
+            <Button variant="outline" icon="X" onClick={clearDates}>Tozalash</Button>
+          )}
+        </div>
+      </Card>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5">
         <Card className="!p-4 sm:!p-5">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Tushum (30 kun)</div>
+            <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Tushum</div>
             <Trend value={+wkTrend} />
           </div>
           <div className="mt-2 text-lg sm:text-2xl font-bold num text-ink-900 leading-tight">
@@ -87,7 +109,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
         </Card>
         <Card className="!p-4 sm:!p-5">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Buyurtma (30 kun)</div>
+            <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Buyurtma</div>
             <Trend value={6.3} />
           </div>
           <div className="mt-2 text-lg sm:text-2xl font-bold num text-ink-900 leading-tight">
@@ -118,7 +140,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
         <div className="flex items-start justify-between mb-2 gap-2">
           <div>
             <h3 className="font-semibold text-ink-900">Tushum</h3>
-            <p className="text-xs text-ink-500 mt-0.5">Soʻnggi 30 kun · soʻm</p>
+            <p className="text-xs text-ink-500 mt-0.5">{periodLabel} · soʻm</p>
           </div>
           <div className="hidden sm:flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1.5">
@@ -143,7 +165,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 4" stroke="#eef0f4" vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={isSmall ? 5 : 3} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={isSmall ? 5 : 3} />
               <YAxis tickFormatter={v => formatUZSShort(v)} tick={{ fontSize: 9, fill: '#8a93a3' }} axisLine={false} tickLine={false} width={isSmall ? 62 : 78} />
               <Tooltip
                 contentStyle={tooltipStyle}
@@ -164,7 +186,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
           <div className="flex items-start justify-between mb-2">
             <div>
               <h3 className="font-semibold text-ink-900">Kunlik buyurtmalar</h3>
-              <p className="text-xs text-ink-500 mt-0.5">Soʻnggi 30 kun</p>
+              <p className="text-xs text-ink-500 mt-0.5">{periodLabel}</p>
             </div>
             <div className="hidden sm:flex items-center gap-3 text-xs">
               <div className="flex items-center gap-1.5">
@@ -183,7 +205,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
             <ResponsiveContainer>
               <BarChart data={data} margin={{ top: 16, right: 6, bottom: 4, left: -16 }}>
                 <CartesianGrid strokeDasharray="3 4" stroke="#eef0f4" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={isSmall ? 5 : 3} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={isSmall ? 5 : 3} />
                 <YAxis tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} width={36} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#eef5fb' }}
                          labelStyle={{ color: '#5b6473', fontSize: 11, marginBottom: 4 }}
