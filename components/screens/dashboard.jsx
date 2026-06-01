@@ -7,7 +7,7 @@ import {
   formatUZSShort, formatTime, timeAgo,
 } from '@/lib/data';
 import { topItems } from '@/lib/services';
-import { downloadCSV, ordersToRows, dateStamp } from '@/lib/export';
+import { exportXLSX, ordersToRows, dateStamp } from '@/lib/export';
 
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -237,7 +237,7 @@ export default function DashboardScreen({ orders, staff = [], userName = '', onO
   const firstName = (userName || '').split(' ')[0] || 'foydalanuvchi';
 
   function exportToday() {
-    downloadCSV(`buyurtmalar-${dateStamp()}.csv`, ordersToRows(today));
+    exportXLSX(`buyurtmalar-${dateStamp()}.xlsx`, ordersToRows(today), 'Bugungi buyurtmalar');
   }
 
   return (

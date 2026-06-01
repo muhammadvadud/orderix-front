@@ -9,7 +9,7 @@ import {
   STATUSES, STATUS_META, ITEM_STATUS_META,
   formatUZS, formatUZSShort, formatTime, formatDate, timeAgo,
 } from '@/lib/data';
-import { downloadCSV, ordersToRows, dateStamp } from '@/lib/export';
+import { exportXLSX, ordersToRows, dateStamp } from '@/lib/export';
 
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -329,8 +329,8 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
     return list;
   }, [dateFiltered, statusFilter, waiterFilter, query, sort]);
 
-  function exportCSV() {
-    downloadCSV(`buyurtmalar-${dateStamp()}.csv`, ordersToRows(filtered));
+  function exportExcel() {
+    exportXLSX(`buyurtmalar-${dateStamp()}.xlsx`, ordersToRows(filtered), 'Buyurtmalar');
   }
 
   // Detail API'dan kelgan to'liq buyurtma (taomlar bilan); kelguncha list'dagi qisqa nusxa.
@@ -379,7 +379,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
         subtitle={`Jami ${orders.length} dan ${filtered.length} ta koʻrsatilmoqda`}
         actions={
           <>
-            <Button variant="outline" icon="Download" size="md" onClick={exportCSV} disabled={filtered.length === 0}>CSV eksport</Button>
+            <Button variant="outline" icon="Download" size="md" onClick={exportExcel} disabled={filtered.length === 0}>Excel eksport</Button>
             <Button variant="primary" icon="Plus" size="md">Yangi buyurtma</Button>
           </>
         }
