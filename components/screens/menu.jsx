@@ -81,6 +81,7 @@ export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem,
   const [catModal, setCatModal]   = useState(false);
   const [search, setSearch]       = useState('');
   const [busy, setBusy]           = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const filtered = menu.filter(m => {
     if (activeCat !== 'all' && m.category !== activeCat) return false;
@@ -104,7 +105,15 @@ export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem,
   }
 
   async function deleteItem(id) {
-    try { await onDeleteItem(id); } catch (e) { alert(e.message || 'Oʻchirishda xatolik'); }
+    setBusy(true);
+    try {
+      await onDeleteItem(id);
+      setConfirmDelete(null);
+    } catch (e) {
+      alert(e.message || 'Oʻchirishda xatolik');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function addCategory(data) {
@@ -254,9 +263,10 @@ export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem,
                           <span className="truncate">{cat?.short || cat?.name}</span>
                         </span>
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
-                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-md bg-white/95 border border-ink-100 text-ink-500 inline-flex items-center justify-center md:opacity-0 group-hover:opacity-100 hover:text-danger transition">
-                        <Icon name="Trash2" size={13} />
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(item); }}
+                        aria-label="Oʻchirish"
+                        className="absolute top-1.5 right-1.5 w-9 h-9 rounded-lg bg-white/95 border border-ink-100 text-ink-500 inline-flex items-center justify-center shadow-sm md:opacity-0 group-hover:opacity-100 hover:bg-danger hover:text-white hover:border-danger active:scale-95 transition">
+                        <Icon name="Trash2" size={17} />
                       </button>
                     </div>
                     <div className="p-3">
@@ -288,6 +298,31 @@ export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem,
 
       <Modal open={catModal} onClose={() => setCatModal(false)} title="Kategoriya qoʻshish" width={400}>
         <CategoryForm onSave={addCategory} onCancel={() => setCatModal(false)} />
+      </Modal>
+
+      <Modal
+        open={!!confirmDelete}
+        onClose={() => !busy && setConfirmDelete(null)}
+        title="Taomni oʻchirish"
+        width={400}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setConfirmDelete(null)} disabled={busy}>Bekor qilish</Button>
+            <Button variant="danger" icon="Trash2" onClick={() => deleteItem(confirmDelete.id)} disabled={busy}>
+              {busy ? 'Oʻchirilmoqda…' : 'Oʻchirish'}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-danger/10 text-danger inline-flex items-center justify-center shrink-0">
+            <Icon name="Trash2" size={18} />
+          </div>
+          <div className="text-sm text-ink-600 leading-relaxed">
+            <span className="font-semibold text-ink-900">{confirmDelete?.name}</span> taomini oʻchirmoqchimisiz?
+            Bu amalni qaytarib boʻlmaydi.
+          </div>
+        </div>
       </Modal>
     </div>
   );
