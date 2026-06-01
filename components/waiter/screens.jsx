@@ -144,8 +144,9 @@ export function MyOrdersScreen({ orders, onAdvance, onOpen, onGoNew }) {
 
 function OrderCard({ order, onAdvance, onOpen }) {
   const action = nextAction(order.status);
-  const itemCount = orderItemCount(order);
-  const total = orderTotal(order);
+  // List'da items bo'lmaydi — backend bergan son/summadan foydalanamiz.
+  const itemCount = order.items.length ? orderItemCount(order) : (order.itemCount ?? 0);
+  const total = order.items.length ? orderTotal(order) : (order.total ?? 0);
   return (
     <div className="rounded-2xl bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.12)] overflow-hidden">
       <button onClick={() => onOpen(order)} className="tap w-full text-left px-4 pt-4 pb-3">
@@ -172,21 +173,23 @@ function OrderCard({ order, onAdvance, onOpen }) {
         </div>
       </button>
 
-      <div className="px-4 pb-3">
-        <div className="rounded-xl bg-slate-50/80 px-3 py-2.5 text-[12.5px] text-slate-600 leading-snug">
-          {order.items.slice(0, 2).map((it, i) => {
-            const m = findItem(it.menuId);
-            return (
-              <div key={i} className="flex justify-between">
-                <span className="truncate pr-2"><span className="font-semibold text-slate-700">{it.qty}×</span> {m?.name}</span>
-              </div>
-            );
-          })}
-          {order.items.length > 2 && (
-            <div className="text-slate-400 mt-0.5">+ {order.items.length - 2} ta yana</div>
-          )}
+      {order.items.length > 0 && (
+        <div className="px-4 pb-3">
+          <div className="rounded-xl bg-slate-50/80 px-3 py-2.5 text-[12.5px] text-slate-600 leading-snug">
+            {order.items.slice(0, 2).map((it, i) => {
+              const m = findItem(it.menuId);
+              return (
+                <div key={i} className="flex justify-between">
+                  <span className="truncate pr-2"><span className="font-semibold text-slate-700">{it.qty}×</span> {m?.name}</span>
+                </div>
+              );
+            })}
+            {order.items.length > 2 && (
+              <div className="text-slate-400 mt-0.5">+ {order.items.length - 2} ta yana</div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {action && (
         <div className="flex gap-2 px-3 pb-3">

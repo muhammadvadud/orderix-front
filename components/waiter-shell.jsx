@@ -32,6 +32,9 @@ function toWaiterOrder(o) {
     tableLabel: `${o.tableNumber}-stol · ${o.zone}`,
     status: o.status,
     createdAt: o.time.getTime(),
+    // List'da backend bergan qiymatlar; detail kelganda items'dan aniqlashadi.
+    itemCount: o.itemCount,
+    total: o.total,
     items: o.items.map(it => ({ menuId: it.menuId, qty: it.qty, status: it.status, itemId: it.id })),
   };
 }
@@ -44,8 +47,10 @@ export default function WaiterShell() {
   const [lookups, setLookups]   = useState({});
   const [openOrderId,     setOpenOrderId]     = useState(null);
   const [historyOrderId,  setHistoryOrderId]  = useState(null);
-  const openOrder    = orders.find(o => o.id === openOrderId)    || null;
-  const historyOrder = orders.find(o => o.id === historyOrderId) || null;
+  const [orderDetail,     setOrderDetail]     = useState(null);
+  // Detail API'dan kelgan to'liq buyurtma (taomlar bilan); kelguncha list'dagi qisqa nusxa.
+  const openOrder    = (orderDetail && orderDetail.id === openOrderId)    ? orderDetail : (orders.find(o => o.id === openOrderId)    || null);
+  const historyOrder = (orderDetail && orderDetail.id === historyOrderId) ? orderDetail : (orders.find(o => o.id === historyOrderId) || null);
   const [toast, setToast]       = useState(null);
   const [draft, setDraft]       = useState({ step: 1, tableId: null, items: [] });
 
@@ -56,6 +61,19 @@ export default function WaiterShell() {
     const raw = await svc.listOrders('', lk || lookups);
     setOrders(raw.map(toWaiterOrder));
   }, [lookups]);
+
+  // Buyurtma ochilganda detail API'dan to'liq ma'lumot olinadi.
+  const loadDetail = useCallback(async (id) => {
+    if (id == null) { setOrderDetail(null); return; }
+    try {
+      setOrderDetail(toWaiterOrder(await svc.getOrder(id, lookups)));
+    } catch (e) {
+      console.error('Buyurtma tafsilotini olishda xatolik:', e);
+    }
+  }, [lookups]);
+
+  function openActive(id)  { setHistoryOrderId(null); setOpenOrderId(id);    loadDetail(id); }
+  function openHistory(id) { setOpenOrderId(null);    setHistoryOrderId(id); loadDetail(id); }
 
   useEffect(() => {
     const s = getSession();
@@ -117,8 +135,9 @@ export default function WaiterShell() {
     const a = o && nextAction(o.status);
     if (!a) return;
     try {
-      await svc.setOrderStatus(id, a.next, lookups);
+      const updated = await svc.setOrderStatus(id, a.next, lookups);
       await reloadOrders();
+      if (id === openOrderId) setOrderDetail(toWaiterOrder(updated));
       setToast('Buyurtma yangilandi');
     } catch (e) { setToast(e.message || 'Xatolik'); }
   }
@@ -126,16 +145,18 @@ export default function WaiterShell() {
   async function editOrderItems(id, newItems) {
     const items = newItems.map(it => ({ menu_item_id: it.menuId, quantity: it.qty }));
     try {
-      await svc.replaceOrderItems(id, items, lookups);
+      const updated = await svc.replaceOrderItems(id, items, lookups);
       await reloadOrders();
+      if (id === openOrderId) setOrderDetail(toWaiterOrder(updated));
       setToast('Buyurtma tahrirlandi');
     } catch (e) { setToast(e.message || 'Tahrirlashda xatolik'); }
   }
 
   async function changeItemStatus(orderId, itemId, newStatus) {
     try {
-      await svc.setOrderItemStatus(orderId, itemId, newStatus, lookups);
+      const updated = await svc.setOrderItemStatus(orderId, itemId, newStatus, lookups);
       await reloadOrders();
+      if (orderId === openOrderId) setOrderDetail(toWaiterOrder(updated));
     } catch (e) { setToast(e.message || 'Xatolik'); }
   }
 
@@ -175,18 +196,18 @@ export default function WaiterShell() {
         <WaiterTopBar />
         <main className="flex-1 min-w-0 relative pb-28 md:pb-8">
           <div className="mx-auto w-full max-w-7xl">
-            {tab === 'orders'  && <MyOrdersScreen orders={orders} onAdvance={advance} onOpen={o => setOpenOrderId(o.id)} onGoNew={() => setTab('new')} />}
+            {tab === 'orders'  && <MyOrdersScreen orders={orders} onAdvance={advance} onOpen={o => openActive(o.id)} onGoNew={() => setTab('new')} />}
             {tab === 'new'     && <NewOrderScreen draft={draft} setDraft={setDraft} onSubmit={placeOrder} occupiedIds={occupiedIds} />}
-            {tab === 'tables'  && <TablesScreen   orders={orders} onOpenOrder={(o) => { setTab('orders'); setOpenOrderId(o.id); }} occupiedIds={occupiedIds} />}
-            {tab === 'history' && <HistoryScreen  orders={orders} onOpen={o => setHistoryOrderId(o.id)} />}
+            {tab === 'tables'  && <TablesScreen   orders={orders} onOpenOrder={(o) => { setTab('orders'); openActive(o.id); }} occupiedIds={occupiedIds} />}
+            {tab === 'history' && <HistoryScreen  orders={orders} onOpen={o => openHistory(o.id)} />}
             {tab === 'profile' && <ProfileScreen  onLogout={handleLogout} />}
           </div>
         </main>
       </div>
       <WaiterBottomNav tab={tab} setTab={setTab} activeCount={activeCount} />
 
-      <OrderDetailSheet order={openOrder}    onClose={() => setOpenOrderId(null)}    onAdvance={advance} onEdit={editOrderItems} onChangeItemStatus={changeItemStatus} />
-      <OrderDetailSheet order={historyOrder} onClose={() => setHistoryOrderId(null)} readOnly onAdvance={() => {}} onEdit={() => {}} onChangeItemStatus={() => {}} />
+      <OrderDetailSheet order={openOrder}    onClose={() => { setOpenOrderId(null); setOrderDetail(null); }}    onAdvance={advance} onEdit={editOrderItems} onChangeItemStatus={changeItemStatus} />
+      <OrderDetailSheet order={historyOrder} onClose={() => { setHistoryOrderId(null); setOrderDetail(null); }} readOnly onAdvance={() => {}} onEdit={() => {}} onChangeItemStatus={() => {}} />
       <Toast message={toast} onDone={() => setToast(null)} />
     </div>
   );

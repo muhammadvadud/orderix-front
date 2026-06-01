@@ -24,6 +24,7 @@ export default function AppShell() {
   const [zones, setZones]         = useState([]);
   const [tables, setTables]       = useState([]);
   const [openOrderId, setOpenOrderId] = useState(null);
+  const [orderDetail, setOrderDetail] = useState(null);
   const [navOpen, setNavOpen]     = useState(false);
   const [loading, setLoading]     = useState(true);
   const [session, setSessionState] = useState(null);
@@ -78,7 +79,19 @@ export default function AppShell() {
   const openCount = orders.filter(o => o.status === 'preparing').length;
 
   function navigate(s) { setNavOpen(false); setScreen(s); }
-  function openOrderFromDashboard(id) { setOpenOrderId(id); setScreen('orders'); }
+
+  // Buyurtma ochilganda detail API'dan to'liq ma'lumot (taomlar bilan) olinadi.
+  const openOrder = useCallback(async (id) => {
+    setOpenOrderId(id);
+    if (id == null) { setOrderDetail(null); return; }
+    try {
+      setOrderDetail(await svc.getOrder(id, lookups));
+    } catch (e) {
+      console.error('Buyurtma tafsilotini olishda xatolik:', e);
+    }
+  }, [lookups]);
+
+  function openOrderFromDashboard(id) { setScreen('orders'); openOrder(id); }
 
   function handleLogout() {
     clearSession();
@@ -139,16 +152,18 @@ export default function AppShell() {
       if (status === 'closed' && cur?.status === 'preparing') {
         await svc.setOrderStatus(id, 'delivered', lookups);
       }
-      await svc.setOrderStatus(id, status, lookups);
+      const updated = await svc.setOrderStatus(id, status, lookups);
       await reloadOrders();
+      if (id === openOrderId) setOrderDetail(updated);
     } catch (e) {
       alert(e.message || 'Holatni oʻzgartirishda xatolik');
     }
   }
   async function changeItemStatus(orderId, itemId, status) {
     try {
-      await svc.setOrderItemStatus(orderId, itemId, status, lookups);
+      const updated = await svc.setOrderItemStatus(orderId, itemId, status, lookups);
       await reloadOrders();
+      if (orderId === openOrderId) setOrderDetail(updated);
     } catch (e) {
       alert(e.message || 'Taom holatini oʻzgartirishda xatolik');
     }
@@ -156,8 +171,9 @@ export default function AppShell() {
   async function editOrder(id, newItems) {
     const items = newItems.map(it => ({ menu_item_id: it.menuId, quantity: it.qty }));
     try {
-      await svc.replaceOrderItems(id, items, lookups);
+      const updated = await svc.replaceOrderItems(id, items, lookups);
       await reloadOrders();
+      if (id === openOrderId) setOrderDetail(updated);
     } catch (e) {
       alert(e.message || 'Buyurtmani tahrirlashda xatolik');
     }
@@ -200,7 +216,8 @@ export default function AppShell() {
               menu={menu}
               categories={categories}
               openOrderId={openOrderId}
-              setOpenOrderId={setOpenOrderId}
+              setOpenOrderId={openOrder}
+              orderDetail={orderDetail}
               onUpdateStatus={updateOrderStatus}
               onChangeItemStatus={changeItemStatus}
               onEditOrder={editOrder}

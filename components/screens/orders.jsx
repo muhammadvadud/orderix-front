@@ -270,7 +270,7 @@ function OrderDetail({ order, menu = [], categories = [], onChangeStatus, onEdit
   );
 }
 
-export default function OrdersScreen({ orders, staff = [], menu = [], categories = [], openOrderId, setOpenOrderId, onUpdateStatus, onChangeItemStatus, onEditOrder }) {
+export default function OrdersScreen({ orders, staff = [], menu = [], categories = [], openOrderId, setOpenOrderId, orderDetail, onUpdateStatus, onChangeItemStatus, onEditOrder }) {
   const [statusFilter, setStatusFilter] = useState('');
   const [waiterFilter, setWaiterFilter] = useState('');
   const [dateRange,   setDateRange]     = useState('today');
@@ -307,7 +307,10 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
     return list;
   }, [orders, statusFilter, waiterFilter, query, sort]);
 
-  const open = orders.find(o => o.id === openOrderId);
+  // Detail API'dan kelgan to'liq buyurtma (taomlar bilan); kelguncha list'dagi qisqa nusxa.
+  const open = (orderDetail && orderDetail.id === openOrderId)
+    ? orderDetail
+    : orders.find(o => o.id === openOrderId);
 
   function toggleSort(key) {
     setSort(s => s.key === key
