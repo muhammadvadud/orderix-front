@@ -30,6 +30,7 @@ export default function AppShell() {
   const [loading, setLoading]     = useState(true);
   const [session, setSessionState] = useState(null);
   const [reportsRefresh, setReportsRefresh] = useState(0);
+  const [serviceRate, setServiceRate] = useState(0.1);
 
   // Lookup maps for adapting orders
   const lookups = useMemo(() => {
@@ -55,6 +56,12 @@ export default function AppShell() {
         ]);
         setCategories(cats); setMenu(items); setStaff(st); setRoles(rls);
         setZones(zt.zones); setTables(zt.tables);
+
+        // Xizmat haqi (%) sozlamadan — tahrirlash oynasidagi hisob to'g'ri bo'lishi uchun
+        try {
+          const settings = await svc.getSettings();
+          if (settings?.service_fee != null) setServiceRate((Number(settings.service_fee) || 0) / 100);
+        } catch {}
 
         const tablesById = {}, zonesById = {}, staffById = {};
         zt.tables.forEach(t => { tablesById[t.id] = t; });
@@ -249,6 +256,7 @@ export default function AppShell() {
               openOrderId={openOrderId}
               setOpenOrderId={openOrder}
               orderDetail={orderDetail}
+              serviceRate={serviceRate}
               onUpdateStatus={updateOrderStatus}
               onChangeItemStatus={changeItemStatus}
               onEditOrder={editOrder}

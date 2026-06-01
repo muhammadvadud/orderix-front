@@ -10,7 +10,7 @@ import {
   formatUZS, formatUZSShort, formatTime, formatDate, timeAgo,
 } from '@/lib/data';
 
-function OrderDetail({ order, menu = [], categories = [], onChangeStatus, onEdit, onChangeItemStatus }) {
+function OrderDetail({ order, menu = [], categories = [], serviceRate = 0.1, onChangeStatus, onEdit, onChangeItemStatus }) {
   const [editMode, setEditMode] = useState(false);
   const [editItems, setEditItems] = useState([]);
   const [activeCat, setActiveCat] = useState(categories[0]?.id || '');
@@ -46,7 +46,7 @@ function OrderDetail({ order, menu = [], categories = [], onChangeStatus, onEdit
   }
 
   const editSubtotal   = editItems.reduce((s, it) => s + it.price * it.qty, 0);
-  const editServiceFee = Math.round(editSubtotal * 0.1);
+  const editServiceFee = Math.round(editSubtotal * serviceRate);
   const editTotal      = editSubtotal + editServiceFee;
 
   if (editMode) {
@@ -127,7 +127,7 @@ function OrderDetail({ order, menu = [], categories = [], onChangeStatus, onEdit
             <span className="num text-ink-900">{formatUZS(editSubtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-ink-600">Xizmat haqi (10%)</span>
+            <span className="text-ink-600">Xizmat haqi ({Math.round(serviceRate * 100)}%)</span>
             <span className="num text-ink-900">{formatUZS(editServiceFee)}</span>
           </div>
           <div className="h-px bg-navy-100" />
@@ -246,7 +246,7 @@ function OrderDetail({ order, menu = [], categories = [], onChangeStatus, onEdit
           <span className="num text-ink-900">{formatUZS(order.subtotal)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-ink-600">Xizmat haqi (10%)</span>
+          <span className="text-ink-600">Xizmat haqi ({Math.round(serviceRate * 100)}%)</span>
           <span className="num text-ink-900">{formatUZS(order.serviceFee)}</span>
         </div>
         <div className="h-px bg-navy-100 my-1" />
@@ -259,7 +259,7 @@ function OrderDetail({ order, menu = [], categories = [], onChangeStatus, onEdit
   );
 }
 
-export default function OrdersScreen({ orders, staff = [], menu = [], categories = [], openOrderId, setOpenOrderId, orderDetail, onUpdateStatus, onChangeItemStatus, onEditOrder }) {
+export default function OrdersScreen({ orders, staff = [], menu = [], categories = [], openOrderId, setOpenOrderId, orderDetail, serviceRate = 0.1, onUpdateStatus, onChangeItemStatus, onEditOrder }) {
   const [statusFilter, setStatusFilter] = useState('');
   const [waiterFilter, setWaiterFilter] = useState('');
   const [dateRange,   setDateRange]     = useState('today');
@@ -577,7 +577,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
           </>
         )}
       >
-        {open && <OrderDetail order={open} menu={menu} categories={categories} onChangeStatus={(s) => updateStatus(open.id, s)} onEdit={editOrder} onChangeItemStatus={changeItemStatus} />}
+        {open && <OrderDetail order={open} menu={menu} categories={categories} serviceRate={serviceRate} onChangeStatus={(s) => updateStatus(open.id, s)} onEdit={editOrder} onChangeItemStatus={changeItemStatus} />}
       </Drawer>
     </div>
   );

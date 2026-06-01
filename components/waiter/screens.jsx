@@ -286,9 +286,9 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
   }
 
   const sub     = orderSubtotal(order);
-  const svc     = Math.round(sub * SERVICE_RATE);
-  const tot     = sub + svc;
-  const editSub = editItems.reduce((s, it) => s + (findItem(it.menuId)?.price || 0) * it.qty, 0);
+  const tot     = orderTotal(order);
+  const svc     = (typeof order.serviceFee === 'number') ? order.serviceFee : Math.max(0, tot - sub);
+  const editSub = editItems.reduce((s, it) => s + ((it.price ?? findItem(it.menuId)?.price ?? 0) * it.qty), 0);
   const editSvc = Math.round(editSub * SERVICE_RATE);
   const editTot = editSub + editSvc;
 

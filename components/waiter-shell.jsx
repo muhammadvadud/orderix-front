@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { WAITER, TABLES, WAITER_COLORS, nextAction, setWaiterData } from '../lib/waiter-data';
+import { WAITER, TABLES, WAITER_COLORS, nextAction, setWaiterData, setServiceRate } from '../lib/waiter-data';
 import { getSession, clearSession } from '@/lib/api';
 import { connectRealtime } from '@/lib/realtime';
 import * as svc from '@/lib/services';
@@ -36,7 +36,9 @@ function toWaiterOrder(o) {
     // List'da backend bergan qiymatlar; detail kelganda items'dan aniqlashadi.
     itemCount: o.itemCount,
     total: o.total,
-    items: o.items.map(it => ({ menuId: it.menuId, qty: it.qty, status: it.status, itemId: it.id })),
+    subtotal: o.subtotal,
+    serviceFee: o.serviceFee,
+    items: o.items.map(it => ({ menuId: it.menuId, qty: it.qty, status: it.status, itemId: it.id, price: it.price })),
   };
 }
 
@@ -147,7 +149,11 @@ export default function WaiterShell() {
 
         const u = s.user || {};
         let restaurantName = '';
-        try { restaurantName = (await svc.getSettings())?.restaurant_name || ''; } catch {}
+        try {
+          const settings = await svc.getSettings();
+          restaurantName = settings?.restaurant_name || '';
+          if (settings?.service_fee != null) setServiceRate(settings.service_fee);
+        } catch {}
         let stats = {};
         try { stats = await svc.waiterStats(); } catch {}
         const name = u.full_name || u.username || 'Ofitsiant';
