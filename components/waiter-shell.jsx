@@ -122,6 +122,13 @@ export default function WaiterShell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
+  // Yangi buyurtma sahifasiga kirilganda stol holatini bir marta yangilab olamiz,
+  // shunda boshqa joyda yopilgan/band qilingan stol to'g'ri (bo'sh/band) ko'rinadi.
+  useEffect(() => {
+    if (ready && tab === 'new') reloadZonesTables();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, ready]);
+
   useEffect(() => {
     const s = getSession();
     if (!s?.access) { router.push('/login'); return; }
