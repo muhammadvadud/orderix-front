@@ -6,7 +6,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Icon } from '../Icon';
-import { Card, Button, Select, Trend, PageHeader, EmptyRow } from '../ui';
+import { Card, Button, Select, Input, Trend, PageHeader, EmptyRow } from '../ui';
 import { topItemsFromOrders, formatUZS, formatUZSShort, uzDateShort } from '@/lib/data';
 import { seriesStats } from '@/lib/services';
 
