@@ -260,7 +260,7 @@ export function EmptyState({ icon = 'Inbox', text = 'Natijalar yoʻq' }) {
 
 export function PageHeader({ title, subtitle, actions }) {
   return (
-    <div className="hidden md:flex items-end justify-between mb-6 gap-4 flex-wrap">
+    <div className="hidden lg:flex items-end justify-between mb-6 gap-4 flex-wrap">
       <div>
         <h1 className="text-2xl font-bold text-ink-900 tracking-tight">{title}</h1>
         {subtitle && <p className="text-sm text-ink-500 mt-1">{subtitle}</p>}
@@ -273,7 +273,7 @@ export function PageHeader({ title, subtitle, actions }) {
 export function MobileSubheader({ subtitle, actions }) {
   if (!subtitle && !actions) return null;
   return (
-    <div className="md:hidden mb-4 flex items-end justify-between gap-3">
+    <div className="lg:hidden mb-4 flex items-end justify-between gap-3">
       {subtitle && <p className="text-xs text-ink-500 leading-relaxed">{subtitle}</p>}
       {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
     </div>

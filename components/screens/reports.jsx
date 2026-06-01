@@ -65,7 +65,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
         }
       />
 
-      <div className="md:hidden mb-4 flex items-center gap-2">
+      <div className="lg:hidden mb-4 flex items-center gap-2">
         <Select value={range} onChange={e => setRange(e.target.value)}
                 options={[
                   { value: '7d', label: '7 kun' },
@@ -144,7 +144,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
               </defs>
               <CartesianGrid strokeDasharray="3 4" stroke="#eef0f4" vertical={false} />
               <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} interval={isSmall ? 5 : 3} />
-              <YAxis tickFormatter={v => formatUZSShort(v)} tick={{ fontSize: 10, fill: '#8a93a3' }} axisLine={false} tickLine={false} width={50} />
+              <YAxis tickFormatter={v => formatUZSShort(v)} tick={{ fontSize: 9, fill: '#8a93a3' }} axisLine={false} tickLine={false} width={isSmall ? 62 : 78} />
               <Tooltip
                 contentStyle={tooltipStyle}
                 labelStyle={{ color: '#5b6473', fontSize: 11, marginBottom: 4 }}

@@ -344,7 +344,7 @@ export default function LocationsScreen({ orders, zones, tables, onAddZone, onAd
         }
       />
 
-      <div className="md:hidden mb-4 flex items-end justify-between gap-2">
+      <div className="lg:hidden mb-4 flex items-end justify-between gap-2">
         <p className="text-xs text-ink-500">{tables.length} ta stol · {zones.length} ta zona</p>
         <div className="flex gap-2">
           <Button variant="outline" icon="Layers" size="sm" onClick={() => setAddZoneModal(true)}>Zona</Button>
@@ -468,7 +468,7 @@ export default function LocationsScreen({ orders, zones, tables, onAddZone, onAd
 
       {/* Mobile FAB */}
       <button onClick={() => setAddTableModal(true)}
-        className="md:hidden fixed right-4 z-30 w-14 h-14 rounded-full bg-navy-700 text-white shadow-pop hover:bg-navy-800 active:scale-95 inline-flex items-center justify-center transition"
+        className="lg:hidden fixed right-4 z-30 w-14 h-14 rounded-full bg-navy-700 text-white shadow-pop hover:bg-navy-800 active:scale-95 inline-flex items-center justify-center transition"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 80px)' }}>
         <Icon name="Plus" size={22} />
       </button>

@@ -78,7 +78,7 @@ export default function StaffScreen({ staff, roles = [], zonesCount = 0, onSaveS
         }
       />
 
-      <div className="md:hidden mb-4 flex items-end justify-between gap-2">
+      <div className="lg:hidden mb-4 flex items-end justify-between gap-2">
         <p className="text-xs text-ink-500">{staff.length} ta xodim</p>
         <Button variant="primary" icon="UserPlus" size="sm" onClick={() => setModal('add')}>Qoʻshish</Button>
       </div>
@@ -113,7 +113,7 @@ export default function StaffScreen({ staff, roles = [], zonesCount = 0, onSaveS
         </div>
       </Card>
 
-      <div className="md:hidden space-y-2">
+      <div className="lg:hidden space-y-2">
         {filtered.length === 0 ? (
           <Card><EmptyState icon="UserX" text="Hech qanday xodim topilmadi" /></Card>
         ) : filtered.map(s => (
@@ -136,7 +136,7 @@ export default function StaffScreen({ staff, roles = [], zonesCount = 0, onSaveS
         ))}
       </div>
 
-      <Card padding={false} className="hidden md:block">
+      <Card padding={false} className="hidden lg:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-[11px] uppercase tracking-wider text-ink-400 bg-ink-50/50 border-b border-ink-100">

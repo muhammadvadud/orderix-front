@@ -95,7 +95,7 @@ function LiveOrdersTable({ orders, onOpen, onNavigate }) {
         <button className="text-xs text-accent font-medium hover:underline" onClick={() => onNavigate('orders')}>Barchasi →</button>
       </div>
 
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden lg:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-[11px] uppercase tracking-wider text-ink-400 bg-ink-50/50">
@@ -137,7 +137,7 @@ function LiveOrdersTable({ orders, onOpen, onNavigate }) {
         </table>
       </div>
 
-      <div className="md:hidden divide-y divide-ink-100">
+      <div className="lg:hidden divide-y divide-ink-100">
         {recent.length === 0 ? (
           <EmptyState icon="Receipt" text="Hozircha buyurtma yoʻq" />
         ) : recent.map(o => (
@@ -229,7 +229,7 @@ export default function DashboardScreen({ orders, staff = [], userName = '', onO
         }
       />
 
-      <div className="md:hidden mb-4">
+      <div className="lg:hidden mb-4">
         <h1 className="text-xl font-bold text-ink-900">Xayrli kun, {firstName} 👋</h1>
         <p className="text-xs text-ink-500 mt-0.5">Bugun restoranlaringizdagi vaziyat.</p>
       </div>
@@ -247,7 +247,7 @@ export default function DashboardScreen({ orders, staff = [], userName = '', onO
           sub={`${waiterCount} ta ofitsiant`} />
       </div>
 
-      <div className="md:hidden mt-4 grid grid-cols-2 gap-3">
+      <div className="lg:hidden mt-4 grid grid-cols-2 gap-3">
         <Button variant="primary" icon="Plus" fullWidth>Yangi buyurtma</Button>
         <Button variant="outline" icon="Download" fullWidth>Eksport</Button>
       </div>

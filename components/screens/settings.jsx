@@ -63,11 +63,11 @@ export default function SettingsScreen() {
     <div className="p-4 sm:p-6 md:p-8 max-w-[1200px] mx-auto">
       <PageHeader title="Sozlamalar" subtitle="Akkauntingiz va restoran sozlamalarini boshqaring" />
 
-      <div className="md:hidden mb-4">
+      <div className="lg:hidden mb-4">
         <p className="text-xs text-ink-500">Akkauntingiz va restoran sozlamalari</p>
       </div>
 
-      <div className="md:hidden mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+      <div className="lg:hidden mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
         <div className="flex gap-2 w-max pb-1">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
@@ -82,7 +82,7 @@ export default function SettingsScreen() {
       </div>
 
       <div className="grid grid-cols-12 gap-4 sm:gap-6">
-        <aside className="hidden md:block col-span-3">
+        <aside className="hidden lg:block col-span-3">
           <nav className="space-y-1">
             {tabs.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
@@ -96,7 +96,7 @@ export default function SettingsScreen() {
           </nav>
         </aside>
 
-        <div className="col-span-12 md:col-span-9 space-y-4">
+        <div className="col-span-12 lg:col-span-9 space-y-4">
           {tab === 'general' && (
             <>
               <Card>

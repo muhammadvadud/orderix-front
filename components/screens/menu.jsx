@@ -135,7 +135,7 @@ export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem,
         }
       />
 
-      <div className="md:hidden mb-3 space-y-3">
+      <div className="lg:hidden mb-3 space-y-3">
         <Input icon="Search" placeholder="Taom qidirish…"
                value={search} onChange={e => setSearch(e.target.value)} />
         <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
@@ -168,7 +168,7 @@ export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem,
       </div>
 
       <div className="grid grid-cols-12 gap-5">
-        <aside className="hidden md:block col-span-3">
+        <aside className="hidden lg:block col-span-3">
           <Card padding={false}>
             <div className="px-4 py-3 border-b border-ink-100 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-ink-800">Kategoriyalar</h3>
@@ -213,8 +213,8 @@ export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem,
           </Card>
         </aside>
 
-        <div className="col-span-12 md:col-span-9">
-          <div className="hidden md:flex items-center gap-3 mb-4">
+        <div className="col-span-12 lg:col-span-9">
+          <div className="hidden lg:flex items-center gap-3 mb-4">
             <Input icon="Search" placeholder={`${activeCat === 'all' ? 'Barcha taomlar' : (activeCatObj?.name || '')} ichidan qidirish…`}
                    value={search} onChange={e => setSearch(e.target.value)} className="flex-1" />
             <Select value="" onChange={() => {}} placeholder="Saralash: Nomi A→Z"
@@ -277,7 +277,7 @@ export default function MenuScreen({ menu, categories, onSaveItem, onDeleteItem,
       </div>
 
       <button onClick={() => setModal('add')}
-        className="md:hidden fixed right-4 z-30 w-14 h-14 rounded-full bg-navy-700 text-white shadow-pop hover:bg-navy-800 active:scale-95 inline-flex items-center justify-center transition"
+        className="lg:hidden fixed right-4 z-30 w-14 h-14 rounded-full bg-navy-700 text-white shadow-pop hover:bg-navy-800 active:scale-95 inline-flex items-center justify-center transition"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 80px)' }}>
         <Icon name="Plus" size={22} />
       </button>

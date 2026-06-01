@@ -348,7 +348,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
         }
       />
 
-      <div className="md:hidden mb-3 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+      <div className="lg:hidden mb-3 -mx-4 px-4 overflow-x-auto scrollbar-hide">
         <div className="flex gap-2 w-max pb-1">
           <button onClick={() => setStatusFilter('')}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition ${
@@ -375,7 +375,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
       </div>
 
       <Card className="mb-4" padding={false}>
-        <div className="md:hidden p-3 flex gap-2 items-center">
+        <div className="lg:hidden p-3 flex gap-2 items-center">
           <Input icon="Search" placeholder="Qidirish…"
                  value={query} onChange={e => setQuery(e.target.value)} className="flex-1" />
           <button onClick={() => setShowFilters(s => !s)}
@@ -387,7 +387,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
           </button>
         </div>
         {showFilters && (
-          <div className="md:hidden border-t border-ink-100 p-3 grid grid-cols-1 gap-2 anim-fade">
+          <div className="lg:hidden border-t border-ink-100 p-3 grid grid-cols-1 gap-2 anim-fade">
             <Select value={waiterFilter} onChange={e => setWaiterFilter(e.target.value)}
                     placeholder="Barcha ofitsiantlar"
                     options={waiters.map(w => ({ value: w.id, label: w.name }))} />
@@ -407,7 +407,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
           </div>
         )}
 
-        <div className="hidden md:flex p-4 flex-wrap items-center gap-3">
+        <div className="hidden lg:flex p-4 flex-wrap items-center gap-3">
           <Input icon="Search" placeholder="№, ofitsiant yoki stol boʻyicha qidirish…"
                  value={query} onChange={e => setQuery(e.target.value)} className="flex-1 min-w-[240px]" />
           <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
@@ -434,7 +434,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
         </div>
       </Card>
 
-      <div className="md:hidden space-y-2">
+      <div className="lg:hidden space-y-2">
         {filtered.length === 0 ? (
           <Card><EmptyState icon="SearchX" text="Hech qanday buyurtma topilmadi" /></Card>
         ) : filtered.slice(0, 60).map(o => (
@@ -483,7 +483,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
         ))}
       </div>
 
-      <Card padding={false} className="hidden md:block">
+      <Card padding={false} className="hidden lg:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
