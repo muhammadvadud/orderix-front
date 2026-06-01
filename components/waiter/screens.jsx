@@ -390,39 +390,21 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
                   })}
                 </div>
                 <div className="space-y-2">
-                  {MENU.filter(m => m.cat === addCat).map(m => {
-                    const q = editItems.find(it => it.menuId === m.id)?.qty || 0;
-                    return (
-                      <div key={m.id} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-slate-200 bg-white">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-semibold text-slate-800 truncate">{m.name}</div>
-                          <div className="text-[11px] text-slate-500 tabular-nums">
-                            {fmt(m.price)} soʻm
-                          </div>
+                  {MENU.filter(m => m.cat === addCat).map(m => (
+                    <div key={m.id} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-slate-200 bg-white">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-semibold text-slate-800 truncate">{m.name}</div>
+                        <div className="text-[11px] text-slate-500 tabular-nums">
+                          {fmt(m.price)} soʻm
                         </div>
-                        {q === 0 ? (
-                          <button onClick={() => changeQty(m.id, +1)}
-                            className="tap h-8 w-8 rounded-full text-white grid place-items-center shrink-0"
-                            style={{ background: NAVY }}>
-                            <Plus size={14}/>
-                          </button>
-                        ) : (
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button onClick={() => changeQty(m.id, -1)}
-                              className="tap h-7 w-7 rounded-full bg-slate-100 grid place-items-center text-slate-700">
-                              <Minus size={12}/>
-                            </button>
-                            <span className="text-[13px] font-bold tabular-nums w-5 text-center">{q}</span>
-                            <button onClick={() => changeQty(m.id, +1)}
-                              className="tap h-7 w-7 rounded-full text-white grid place-items-center"
-                              style={{ background: NAVY }}>
-                              <Plus size={12}/>
-                            </button>
-                          </div>
-                        )}
                       </div>
-                    );
-                  })}
+                      <button onClick={() => changeQty(m.id, +1)}
+                        className="tap h-8 w-8 rounded-full text-white grid place-items-center shrink-0"
+                        style={{ background: NAVY }}>
+                        <Plus size={14}/>
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 

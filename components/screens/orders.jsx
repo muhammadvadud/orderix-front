@@ -105,29 +105,18 @@ function OrderDetail({ order, menu = [], categories = [], onChangeStatus, onEdit
             ))}
           </div>
           <div className="space-y-1.5">
-            {menu.filter(m => m.category === activeCat).map(m => {
-              const q = editItems.find(it => it.menuId === m.id)?.qty || 0;
-              return (
-                <div key={m.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-ink-100 bg-white">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-ink-800 truncate">{m.name}</div>
-                    <div className="text-[11px] num text-ink-500">{formatUZSShort(m.price)} soʻm</div>
-                  </div>
-                  {q === 0 ? (
-                    <Button variant="soft" size="sm" icon="Plus"
-                      onClick={() => changeQty(m.id, m.name, m.price, +1)}>
-                      Qoʻshish
-                    </Button>
-                  ) : (
-                    <div className="flex items-center gap-1">
-                      <IconButton name="Minus" label="−" size={26} variant="outline" onClick={() => changeQty(m.id, m.name, m.price, -1)} />
-                      <span className="text-sm font-bold num w-6 text-center">{q}</span>
-                      <IconButton name="Plus"  label="+" size={26} variant="outline" onClick={() => changeQty(m.id, m.name, m.price, +1)} />
-                    </div>
-                  )}
+            {menu.filter(m => m.category === activeCat).map(m => (
+              <div key={m.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-ink-100 bg-white">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-ink-800 truncate">{m.name}</div>
+                  <div className="text-[11px] num text-ink-500">{formatUZSShort(m.price)} soʻm</div>
                 </div>
-              );
-            })}
+                <Button variant="soft" size="sm" icon="Plus"
+                  onClick={() => changeQty(m.id, m.name, m.price, +1)}>
+                  Qoʻshish
+                </Button>
+              </div>
+            ))}
           </div>
         </div>
 
