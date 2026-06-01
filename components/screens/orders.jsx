@@ -181,25 +181,31 @@ function OrderDetail({ order, menu = [], categories = [], serviceRate = 0.1, onC
         </div>
       </div>
 
-      <div>
-        <div className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2">Holatni oʻzgartirish</div>
-        <div className="flex flex-wrap gap-1.5">
-          {STATUSES.map(s => {
-            const meta = STATUS_META[s];
-            const active = order.status === s;
-            return (
-              <button key={s} onClick={() => onChangeStatus(s)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-                  active ? 'border-transparent text-white shadow-sm' : 'border-ink-200 text-ink-600 hover:border-ink-300 bg-white'
-                }`}
-                style={active ? { background: meta.dot } : null}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: active ? '#ffffff' : meta.dot }} />
-                {meta.label}
-              </button>
-            );
-          })}
+      {canEdit ? (
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2">Holatni oʻzgartirish</div>
+          <div className="flex flex-wrap gap-1.5">
+            {STATUSES.map(s => {
+              const meta = STATUS_META[s];
+              const active = order.status === s;
+              return (
+                <button key={s} onClick={() => onChangeStatus(s)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                    active ? 'border-transparent text-white shadow-sm' : 'border-ink-200 text-ink-600 hover:border-ink-300 bg-white'
+                  }`}
+                  style={active ? { background: meta.dot } : null}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: active ? '#ffffff' : meta.dot }} />
+                  {meta.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="text-xs text-ink-500 bg-ink-50 border border-ink-100 rounded-lg px-3 py-2.5">
+          Bu buyurtma yopilgan — holatini oʻzgartirib boʻlmaydi.
+        </div>
+      )}
 
       <div>
         <div className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2">
