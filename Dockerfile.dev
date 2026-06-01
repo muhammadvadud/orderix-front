@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1
+# Development uchun — hot reload bilan (kod o'zgarsa darhol ko'rinadi)
+
+FROM node:20-alpine
+WORKDIR /app
+
+# Bog'liqliklarni o'rnatish (kod volume orqali ulanadi)
+COPY package.json package-lock.json ./
+RUN npm ci
+
+ENV NEXT_TELEMETRY_DISABLED=1
+EXPOSE 3000
+
+# 0.0.0.0 ga bog'lanadi — Docker tashqarisidan ham ochiladi
+CMD ["npx", "next", "dev", "-H", "0.0.0.0"]

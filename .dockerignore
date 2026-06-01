@@ -6,6 +6,7 @@ node_modules
 .vscode
 npm-debug.log*
 Dockerfile
+Dockerfile.dev
 .dockerignore
 docker-compose.yml
 *.md

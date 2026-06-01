@@ -1,12 +1,44 @@
+# Rejim .env dagi COMPOSE_PROFILES bilan tanlanadi:
+#   COMPOSE_PROFILES=dev   -> hot reload (development)
+#   COMPOSE_PROFILES=prod  -> optimallashtirilgan build (production)
+# Har ikkala holatda ham faqat:  docker compose up -d --build
+
 services:
-  web:
+  # ── Development (hot reload) ──────────────────────────────
+  web-dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      # Docker ichida fayl o'zgarishlarini sezish uchun (hot reload)
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
+    volumes:
+      # Loyiha kodi jonli ulanadi — saqlasangiz darhol yangilanadi
+      - .:/app
+      # node_modules va .next host'dan ustun yozib ketmasligi uchun
+      - /app/node_modules
+      - /app/.next
+
+  # ── Production (optimallashtirilgan) ──────────────────────
+  web-prod:
+    profiles: ["prod"]
     build:
       context: .
       dockerfile: ./Dockerfile
       args:
+        # NEXT_PUBLIC_* build vaqtida client kodga joylanadi
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
     restart: always
     ports:
       - "${WEB_PORT:-3000}:3000"
     environment:
       - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
