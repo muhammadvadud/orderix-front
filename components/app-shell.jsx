@@ -237,6 +237,7 @@ export default function AppShell() {
               userName={user.name}
               onOpenOrder={openOrderFromDashboard}
               onNavigate={navigate}
+              liveKey={reportsRefresh}
             />
           )}
           {screen === 'orders' && (

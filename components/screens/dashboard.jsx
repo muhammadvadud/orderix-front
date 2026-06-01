@@ -1,10 +1,12 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { Icon } from '../Icon';
 import { Card, Button, Badge, Avatar, Trend, PageHeader, EmptyState, EmptyRow } from '../ui';
 import {
   STATUSES, STATUS_META,
-  topItemsFromOrders, formatUZSShort, formatTime, timeAgo,
+  formatUZSShort, formatTime, timeAgo,
 } from '@/lib/data';
+import { topItems } from '@/lib/services';
 
 function StatCard({ icon, iconBg, iconFg, label, value, trend, sub }) {
   return (
@@ -207,13 +209,22 @@ function ActivityFeed({ orders }) {
   );
 }
 
-export default function DashboardScreen({ orders, staff = [], userName = '', onOpenOrder, onNavigate }) {
+export default function DashboardScreen({ orders, staff = [], userName = '', onOpenOrder, onNavigate, liveKey = 0 }) {
   const today = orders;
   const openCount = today.filter(o => o.status === 'preparing').length;
   const revenue = today.filter(o => o.status !== 'preparing' && o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
   const waiterIds = new Set(today.map(o => o.waiterId));
-  const topItems = topItemsFromOrders(orders, 5);
   const waiterCount = staff.filter(s => s.roleRaw === 'waiter').length;
+
+  // Bugun eng ko'p sotilgan taomlar — backenddan (buyurtma o'zgarsa liveKey orqali yangilanadi)
+  const [topItemsList, setTopItemsList] = useState([]);
+  useEffect(() => {
+    let active = true;
+    topItems({ date: 'today', limit: 5 })
+      .then(t => { if (active) setTopItemsList(t); })
+      .catch(() => { if (active) setTopItemsList([]); });
+    return () => { active = false; };
+  }, [liveKey]);
   const firstName = (userName || '').split(' ')[0] || 'foydalanuvchi';
 
   return (
@@ -255,7 +266,7 @@ export default function DashboardScreen({ orders, staff = [], userName = '', onO
       <div className="flex flex-col xl:grid xl:grid-cols-3 gap-4 mt-4">
         {/* Right column — comes first on mobile for quick overview */}
         <div className="space-y-4 xl:order-2">
-          <TopItemsWidget items={topItems} />
+          <TopItemsWidget items={topItemsList} />
           <Card>
             <div className="flex items-center justify-between mb-4">
               <div>

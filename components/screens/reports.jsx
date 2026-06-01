@@ -7,8 +7,8 @@ import {
 } from 'recharts';
 import { Icon } from '../Icon';
 import { Card, Button, Select, Input, Trend, PageHeader, EmptyRow } from '../ui';
-import { topItemsFromOrders, formatUZS, formatUZSShort, uzDateShort } from '@/lib/data';
-import { seriesStats } from '@/lib/services';
+import { formatUZS, formatUZSShort, uzDateShort } from '@/lib/data';
+import { seriesStats, topItems } from '@/lib/services';
 
 export default function ReportsScreen({ orders, liveKey = 0 }) {
   const [range, setRange]   = useState('30d');
@@ -16,6 +16,7 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
   const [dateTo, setDateTo]     = useState('');
   const [isSmall, setIsSmall] = useState(false);
   const [data, setData]     = useState([]);
+  const [topList, setTopList] = useState([]);
 
   const customRange = !!(dateFrom && dateTo);
   const periodLabel = customRange
@@ -31,6 +32,9 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
     seriesStats({ range, dateFrom, dateTo })
       .then(d => { if (active) setData(d.map(x => ({ ...x, revenue: Number(x.revenue) || 0, orders: Number(x.orders) || 0, label: uzDateShort(x.date) }))); })
       .catch(() => { if (active) setData([]); });
+    topItems({ range, dateFrom, dateTo, limit: 10 })
+      .then(t => { if (active) setTopList(t); })
+      .catch(() => { if (active) setTopList([]); });
     return () => { active = false; };
   }, [range, dateFrom, dateTo, liveKey]);
 
@@ -45,8 +49,6 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
   const wkRev = last7.reduce((s, d) => s + d.revenue, 0);
   const prevWkRev = prev7.reduce((s, d) => s + d.revenue, 0);
   const wkTrend = prevWkRev ? ((wkRev - prevWkRev) / prevWkRev * 100).toFixed(1) : '0';
-
-  const topItems = topItemsFromOrders(orders, 10);
 
   const tooltipStyle = {
     background: 'white',
@@ -235,9 +237,9 @@ export default function ReportsScreen({ orders, liveKey = 0 }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
-              {topItems.length === 0 ? (
+              {topList.length === 0 ? (
                 <EmptyRow colSpan={4} icon="UtensilsCrossed" text="Hali sotilgan taom yoʻq" />
-              ) : topItems.map((it, i) => (
+              ) : topList.map((it, i) => (
                 <tr key={it.menuId} className="hover:bg-ink-50/60">
                   <td className="px-4 sm:px-5 py-2.5">
                     <span className={`inline-flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-bold ${
