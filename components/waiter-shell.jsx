@@ -114,13 +114,13 @@ export default function WaiterShell() {
   };
   rtRef.current.locations = () => { reloadZonesTables(); };
   useEffect(() => {
-    if (!getSession()?.access) return undefined;
+    if (!ready || !getSession()?.access) return undefined;
     return connectRealtime((resource) => {
       const handler = rtRef.current[resource];
       if (handler) handler();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [ready]);
 
   useEffect(() => {
     const s = getSession();
