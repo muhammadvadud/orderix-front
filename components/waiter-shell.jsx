@@ -107,6 +107,8 @@ export default function WaiterShell() {
   const rtRef = useRef({});
   rtRef.current.orders = () => {
     reloadOrders();
+    // Stol bandligi buyurtmalardan hisoblanadi (boshqa ofitsiantniki ham) — stollar yangilansin
+    reloadZonesTables();
     const openId = openOrderId ?? historyOrderId;
     if (openId != null) loadDetail(openId);
   };
