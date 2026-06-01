@@ -124,37 +124,6 @@ function SuccessScreen({ method, onContinue }) {
   );
 }
 
-function DemoRoleSelector({ onSelect }) {
-  return (
-    <div className="mt-8 pt-6 border-t border-ink-200">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="flex-1 h-px bg-ink-200" />
-        <span className="text-xs text-ink-400 font-medium px-2">Demo rejim</span>
-        <span className="flex-1 h-px bg-ink-200" />
-      </div>
-      <p className="text-center text-[11px] text-ink-400 mb-3">API ulanmagan — to&apos;g&apos;ridan-to&apos;g&apos;ri kirish</p>
-      <div className="flex gap-2">
-        <button
-          onClick={() => onSelect('manager')}
-          className="flex-1 h-11 rounded-xl border-2 border-ink-200 text-sm font-semibold text-ink-700 hover:border-navy-400 hover:bg-navy-50 transition-all">
-          <span className="flex items-center justify-center gap-1.5">
-            <Icon name="LayoutDashboard" size={14} />
-            Menejer
-          </span>
-        </button>
-        <button
-          onClick={() => onSelect('waiter')}
-          className="flex-1 h-11 rounded-xl border-2 border-navy-200 bg-navy-50 text-sm font-semibold text-navy-700 hover:bg-navy-100 hover:border-navy-400 transition-all">
-          <span className="flex items-center justify-center gap-1.5">
-            <Icon name="UtensilsCrossed" size={14} />
-            Ofitsiant
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function LoginApp() {
   const router = useRouter();
   const [tab, setTab]         = useState('telegram');
@@ -183,17 +152,6 @@ export default function LoginApp() {
     router.push(target);
   }
 
-  function handleDemoSelect(selectedRole) {
-    try {
-      localStorage.setItem('orderix_session', JSON.stringify({
-        method: 'demo',
-        role: selectedRole,
-        loginAt: new Date().toISOString(),
-      }));
-    } catch (e) {}
-    router.push(selectedRole === 'waiter' ? '/waiter' : '/');
-  }
-
   return (
     <div className="min-h-screen lg:h-screen flex flex-col lg:flex-row bg-ink-50">
       <div className="lg:w-[46%] lg:min-w-[440px] lg:max-w-[640px]">
@@ -211,27 +169,7 @@ export default function LoginApp() {
                 <p className="mt-1.5 text-sm text-ink-500">Boshqaruv panelidan foydalanish uchun tasdiqlanish lozim.</p>
               </div>
 
-              <div className="mt-5">
-                <label className="text-[11px] font-semibold text-ink-500 uppercase tracking-wider">Rol tanlang</label>
-                <div className="mt-2 flex gap-2">
-                  {[
-                    { id: 'manager', label: 'Menejer',   icon: 'LayoutDashboard' },
-                    { id: 'waiter',  label: 'Ofitsiant', icon: 'UtensilsCrossed' },
-                  ].map(r => (
-                    <button key={r.id} onClick={() => setRole(r.id)}
-                      className={`flex-1 h-11 rounded-xl border-2 text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                        role === r.id
-                          ? 'border-navy-700 bg-navy-50 text-navy-800'
-                          : 'border-ink-200 bg-white text-ink-600 hover:border-ink-300'
-                      }`}>
-                      <Icon name={r.icon} size={14} />
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-5">
+              <div className="mt-6">
                 <TabSwitcher tab={tab} setTab={setTab} />
               </div>
 
@@ -242,8 +180,6 @@ export default function LoginApp() {
                   <TelegramForm onSuccess={handleSuccess} />
                 )}
               </div>
-
-              <DemoRoleSelector onSelect={handleDemoSelect} />
 
               <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-ink-400">
                 <a href="#" className="hover:text-ink-600">Maxfiylik</a>
