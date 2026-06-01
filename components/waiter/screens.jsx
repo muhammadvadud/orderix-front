@@ -180,7 +180,7 @@ function OrderCard({ order, onAdvance, onOpen }) {
               const m = findItem(it.menuId);
               return (
                 <div key={i} className="flex justify-between">
-                  <span className="truncate pr-2"><span className="font-semibold text-slate-700">{it.qty}×</span> {m?.name}</span>
+                  <span className="truncate pr-2"><span className="font-semibold text-slate-700">{it.qty}×</span> {it.name || m?.name || ''}</span>
                 </div>
               );
             })}
@@ -342,12 +342,14 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
                   )}
                   {editItems.map((it) => {
                     const m = findItem(it.menuId);
+                    const nm = it.name || m?.name || '';
+                    const pr = it.price ?? m?.price ?? 0;
                     return (
                       <div key={it.menuId} className="px-3.5 py-3 flex items-center gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="text-[14px] font-semibold text-slate-800 truncate">{m?.name}</div>
+                          <div className="text-[14px] font-semibold text-slate-800 truncate">{nm}</div>
                           <div className="text-[12px] text-slate-500 tabular-nums">
-                            {formatSoum((m?.price || 0) * it.qty)}
+                            {formatSoum(pr * it.qty)}
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -423,19 +425,22 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
               <div className="rounded-2xl border border-slate-200 divide-y divide-slate-100">
                 {order.items.map((it, i) => {
                   const m = findItem(it.menuId);
+                  // O'chirilgan menyu mahsuloti uchun ham nom/narx ko'rinishi uchun backend qiymatini ishlatamiz
+                  const name = it.name || m?.name || '';
+                  const price = it.price ?? m?.price ?? 0;
                   return (
                     <div key={i} className="px-3.5 py-3">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 pr-2">
                           <div className={`text-[15px] font-semibold truncate ${it.status === 'cancelled' ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                            {m?.name}
+                            {name}
                           </div>
-                          <div className="text-[12px] text-slate-500">{formatSoum(m?.price || 0)} / dona</div>
+                          <div className="text-[12px] text-slate-500">{formatSoum(price)} / dona</div>
                         </div>
                         <div className="text-right shrink-0">
                           <div className="text-[13px] font-bold text-slate-900">×{it.qty}</div>
                           <div className="text-[12px] text-slate-500 tabular-nums">
-                            {formatSoum((m?.price || 0) * it.qty)}
+                            {formatSoum(price * it.qty)}
                           </div>
                         </div>
                       </div>
@@ -912,8 +917,8 @@ function TableSheet({ table, order, onClose, onOpenOrder }) {
                   const m = findItem(it.menuId);
                   return (
                     <div key={i} className="px-3.5 py-2.5 flex items-center justify-between">
-                      <div className="text-[13.5px] text-slate-700"><span className="font-bold">{it.qty}×</span> {m?.name}</div>
-                      <div className="text-[12px] text-slate-500 tabular-nums">{formatSoum((m?.price || 0) * it.qty)}</div>
+                      <div className="text-[13.5px] text-slate-700"><span className="font-bold">{it.qty}×</span> {it.name || m?.name || ''}</div>
+                      <div className="text-[12px] text-slate-500 tabular-nums">{formatSoum((it.price ?? m?.price ?? 0) * it.qty)}</div>
                     </div>
                   );
                 })}
