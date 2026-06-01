@@ -147,7 +147,7 @@ export default function LoginApp() {
       try { return JSON.parse(localStorage.getItem('orderix_session') || '{}')?.user?.role; }
       catch { return null; }
     })();
-    const target = backendRole === 'waiter' ? '/waiter' : (backendRole ? '/' : (role === 'waiter' ? '/waiter' : '/'));
+    const target = backendRole === 'waiter' ? '/waiter' : (backendRole ? '/manager' : (role === 'waiter' ? '/waiter' : '/manager'));
     router.push(target);
   }
 
