@@ -14,6 +14,25 @@ import { getSession, clearSession } from '@/lib/api';
 import { connectRealtime } from '@/lib/realtime';
 import * as svc from '@/lib/services';
 
+async function loadFreshSession(router) {
+  try {
+    const session = await svc.refreshSessionUser();
+    if (!session?.access) {
+      router.push('/login');
+      return null;
+    }
+    return session;
+  } catch (e) {
+    if (e?.status === 401) {
+      clearSession();
+      router.push('/login');
+      return null;
+    }
+    console.error('Sessiyani yangilashda xatolik:', e);
+    return getSession();
+  }
+}
+
 export default function AppShell() {
   const router = useRouter();
   const [screen, setScreen]       = useState('dashboard');
@@ -46,10 +65,10 @@ export default function AppShell() {
   }, [lookups]);
 
   useEffect(() => {
-    const s = getSession();
-    if (!s?.access) { router.push('/login'); return; }
-    setSessionState(s);
     (async () => {
+      const s = await loadFreshSession(router);
+      if (!s?.access) { return; }
+      setSessionState(s);
       try {
         const [cats, items, st, zt, rls] = await Promise.all([
           svc.listCategories(), svc.listMenuItems(), svc.listStaff(), svc.listZonesAndTables(), svc.listRoles(),

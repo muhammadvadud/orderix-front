@@ -15,6 +15,25 @@ import {
 
 const { NAVY, ACCENT, BG } = WAITER_COLORS;
 
+async function loadFreshSession(router) {
+  try {
+    const session = await svc.refreshSessionUser();
+    if (!session?.access) {
+      router.push('/login');
+      return null;
+    }
+    return session;
+  } catch (e) {
+    if (e?.status === 401) {
+      clearSession();
+      router.push('/login');
+      return null;
+    }
+    console.error('Sessiyani yangilashda xatolik:', e);
+    return getSession();
+  }
+}
+
 const NAV_ITEMS = [
   { id: 'orders',  label: 'Buyurtmalarim',  Ico: ClipboardList, badge: true },
   { id: 'new',     label: 'Yangi buyurtma', Ico: PlusCircle },
@@ -133,9 +152,9 @@ export default function WaiterShell() {
   }, [tab, ready]);
 
   useEffect(() => {
-    const s = getSession();
-    if (!s?.access) { router.push('/login'); return; }
     (async () => {
+      const s = await loadFreshSession(router);
+      if (!s?.access) { setReady(true); return; }
       try {
         const [cats, items, zt] = await Promise.all([
           svc.listCategories(), svc.listMenuItems(), svc.listZonesAndTables(),
