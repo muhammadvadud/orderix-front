@@ -12,6 +12,7 @@ import ReportsScreen from './screens/reports';
 import SettingsScreen from './screens/settings';
 import { getSession, clearSession } from '@/lib/api';
 import { connectRealtime } from '@/lib/realtime';
+import { routeForRole, normalizeRole } from '@/lib/auth';
 import * as svc from '@/lib/services';
 
 async function loadFreshSession(router) {
@@ -68,6 +69,11 @@ export default function AppShell() {
     (async () => {
       const s = await loadFreshSession(router);
       if (!s?.access) { return; }
+      if (normalizeRole(s?.user?.role) !== 'manager') {
+        router.replace(routeForRole(s?.user?.role));
+        setLoading(false);
+        return;
+      }
       setSessionState(s);
       try {
         const [cats, items, st, zt, rls] = await Promise.all([

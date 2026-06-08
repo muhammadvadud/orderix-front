@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { WAITER, TABLES, WAITER_COLORS, nextAction, setWaiterData, setServiceRate } from '../lib/waiter-data';
 import { getSession, clearSession } from '@/lib/api';
 import { connectRealtime } from '@/lib/realtime';
+import { routeForRole, normalizeRole } from '@/lib/auth';
 import * as svc from '@/lib/services';
 import {
   MyOrdersScreen, NewOrderScreen, TablesScreen, ProfileScreen,
@@ -155,6 +156,11 @@ export default function WaiterShell() {
     (async () => {
       const s = await loadFreshSession(router);
       if (!s?.access) { setReady(true); return; }
+      if (normalizeRole(s?.user?.role) !== 'waiter') {
+        router.replace(routeForRole(s?.user?.role));
+        setReady(true);
+        return;
+      }
       try {
         const [cats, items, zt] = await Promise.all([
           svc.listCategories(), svc.listMenuItems(), svc.listZonesAndTables(),
