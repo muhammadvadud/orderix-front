@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { WAITER, TABLES, WAITER_COLORS, nextAction, setWaiterData, setServiceRate } from '../lib/waiter-data';
 import { getSession, clearSession } from '@/lib/api';
 import { connectRealtime } from '@/lib/realtime';
-import { routeForRole, normalizeRole } from '@/lib/auth';
+import { routeForRole, normalizeRole, clearRoleCookie } from '@/lib/auth';
 import * as svc from '@/lib/services';
 import {
   MyOrdersScreen, NewOrderScreen, TablesScreen, ProfileScreen,
@@ -27,6 +27,7 @@ async function loadFreshSession(router) {
   } catch (e) {
     if (e?.status === 401) {
       clearSession();
+      clearRoleCookie();
       router.push('/login');
       return null;
     }
@@ -252,6 +253,7 @@ export default function WaiterShell() {
 
   function handleLogout() {
     clearSession();
+    clearRoleCookie();
     router.push('/login');
   }
 

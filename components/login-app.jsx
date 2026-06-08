@@ -6,6 +6,7 @@ import { Logo, Btn } from './login/login-ui';
 import PasswordForm from './login/login-pwd';
 import TelegramForm from './login/login-otp';
 import { hydrateSession } from '@/lib/services';
+import { setRoleCookie, routeForRole } from '@/lib/auth';
 
 function BrandPanel() {
   return (
@@ -138,7 +139,10 @@ export default function LoginApp() {
       loginAt: new Date().toISOString(),
     });
     const backendRole = session?.user?.role;
-    if (backendRole) setRole(backendRole === 'waiter' ? 'waiter' : 'manager');
+    if (backendRole) {
+      setRole(backendRole === 'waiter' ? 'waiter' : 'manager');
+      setRoleCookie(backendRole);
+    }
     setSuccess(payload);
   }
 
@@ -147,8 +151,7 @@ export default function LoginApp() {
       try { return JSON.parse(localStorage.getItem('orderix_session') || '{}')?.user?.role; }
       catch { return null; }
     })();
-    const target = backendRole === 'waiter' ? '/waiter' : (backendRole ? '/manager' : (role === 'waiter' ? '/waiter' : '/manager'));
-    router.push(target);
+    router.push(routeForRole(backendRole || role));
   }
 
   return (

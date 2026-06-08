@@ -2,6 +2,7 @@
 import { Icon } from './Icon';
 import { Avatar, IconButton } from './ui';
 import { useRouter } from 'next/navigation';
+import { clearRoleCookie } from '@/lib/auth';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Bosh sahifa', icon: 'LayoutDashboard' },
@@ -39,6 +40,7 @@ export function Sidebar({ active, onNavigate, user, openCount }) {
 
   function handleLogout() {
     try { localStorage.removeItem('orderix_session'); } catch (e) {}
+    clearRoleCookie();
     router.push('/login');
   }
 
@@ -107,6 +109,7 @@ export function MobileNavDrawer({ open, onClose, active, onNavigate, user, openC
 
   function handleLogout() {
     try { localStorage.removeItem('orderix_session'); } catch (e) {}
+    clearRoleCookie();
     router.push('/login');
   }
 
