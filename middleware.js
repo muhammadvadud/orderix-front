@@ -8,6 +8,10 @@ export function middleware(request) {
   const { pathname } = request.nextUrl;
   const role = request.cookies.get('orderix_role')?.value || null;
 
+  if (pathname === '/login' && role) {
+    return NextResponse.redirect(new URL(routeForRole(role), request.url));
+  }
+
   if (pathname === '/manager' && role === 'waiter') {
     return NextResponse.redirect(new URL('/waiter', request.url));
   }
@@ -20,5 +24,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/manager', '/waiter'],
+  matcher: ['/login', '/manager', '/waiter'],
 };
