@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { Icon } from '../Icon';
 import { Card, Button, IconButton, Avatar, RoleBadge, Input, Select, Modal, Field, PageHeader, EmptyRow, EmptyState } from '../ui';
 import { formatDate } from '@/lib/data';
 import { isValidPhone, formatPhone, formatPhoneInput } from '@/lib/phone';
@@ -50,23 +51,7 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
               className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 inline-flex items-center justify-center text-ink-400 hover:text-ink-700 rounded-md hover:bg-ink-100"
             >
               <span className="sr-only">{showPassword ? 'Parolni yashirish' : 'Parolni ko‘rsatish'}</span>
-              <span className="inline-flex items-center justify-center">
-                <svg viewBox="0 0 24 24" className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {showPassword ? (
-                    <>
-                      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.64-1.53 1.58-2.92 2.76-4.05" />
-                      <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-.59 1.41-1.43 2.69-2.45 3.74" />
-                      <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
-                      <path d="M1 1l22 22" />
-                    </>
-                  ) : (
-                    <>
-                      <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8-10-8-10-8Z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </>
-                  )}
-                </svg>
-              </span>
+              <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={16} />
             </button>
           </div>
           {password && !passwordOk && (
