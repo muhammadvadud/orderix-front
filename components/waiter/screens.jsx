@@ -640,30 +640,30 @@ function StepMenu({ draft, setDraft, onBack, onNext }) {
         {items.map(m => {
           const q = inCart(m.id);
           return (
-            <div key={m.id} className="rounded-2xl bg-white border border-slate-200/70 p-3 flex flex-col">
+            <div key={m.id} className="rounded-2xl bg-white border border-slate-200/70 p-3 flex flex-col min-w-0">
               <div className="h-20 rounded-xl mb-2 grid place-items-center"
                 style={{ background: `linear-gradient(135deg, ${ACCENT}1a, ${NAVY}14)` }}>
                 <CategoryGlyph cat={m.cat} />
               </div>
-              <div className="text-[13.5px] font-bold text-slate-900 leading-tight">{m.name}</div>
+              <div className="text-[13.5px] font-bold text-slate-900 leading-tight line-clamp-2 min-h-[34px]">{m.name}</div>
               <div className="text-[11px] text-slate-500 leading-tight mt-0.5 line-clamp-1">{m.desc}</div>
-              <div className="mt-2 flex items-center justify-between">
-                <div className="text-[12px] font-extrabold tabular-nums" style={{ color: NAVY }}>
+              <div className="mt-auto pt-2">
+                <div className="text-[12px] leading-none font-extrabold tabular-nums truncate" style={{ color: NAVY }}>
                   {fmt(m.price)}
                 </div>
                 {q === 0 ? (
                   <button onClick={() => change(m.id, +1)}
-                    className="tap h-9 px-3 rounded-full text-white text-[12px] font-semibold inline-flex items-center gap-1"
+                    className="tap mt-2 h-9 w-full rounded-full text-white text-[12px] font-semibold inline-flex items-center justify-center gap-1"
                     style={{ background: NAVY }}>
                     <Plus size={13}/> Qoʻshish
                   </button>
                 ) : (
-                  <div className="flex items-center gap-1.5">
+                  <div className="mt-2 h-9 w-full rounded-full bg-slate-100 grid grid-cols-[36px_1fr_36px] items-center overflow-hidden">
                     <button onClick={() => change(m.id, -1)}
-                      className="tap h-9 w-9 rounded-full bg-slate-100 grid place-items-center text-slate-700">
+                      className="tap h-9 w-9 grid place-items-center text-slate-700">
                       <Minus size={14}/>
                     </button>
-                    <div className="min-w-[20px] text-center text-[14px] font-bold tabular-nums">{q}</div>
+                    <div className="min-w-0 text-center text-[14px] font-bold tabular-nums text-slate-900">{q}</div>
                     <button onClick={() => change(m.id, +1)}
                       className="tap h-9 w-9 rounded-full text-white grid place-items-center"
                       style={{ background: NAVY }}>

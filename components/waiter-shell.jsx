@@ -380,12 +380,22 @@ function WaiterBottomNav({ tab, setTab, activeCount }) {
     { id: 'history', label: 'Tarix',       Ico: Receipt },
     { id: 'profile', label: 'Profil',      Ico: User },
   ];
+  const activeIndex = items.findIndex(it => it.id === tab);
   return (
     <div className="md:hidden fixed left-0 right-0 z-40 px-3"
       style={{ bottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}>
-      <div className="mx-auto max-w-md rounded-3xl bg-white/95 backdrop-blur-xl border border-slate-200/70
+      <div className="relative mx-auto max-w-md rounded-3xl bg-white/95 backdrop-blur-xl border border-slate-200/70
                       shadow-[0_-4px_30px_-12px_rgba(15,23,42,0.18)] flex items-stretch px-2 py-1.5"
         style={{ height: 64 }}>
+        {activeIndex >= 0 && !items[activeIndex].primary && (
+          <span
+            className="absolute bottom-2 h-1 w-6 rounded-full transition-[left] duration-300 ease-out"
+            style={{
+              background: NAVY,
+              left: `calc(0.5rem + ((100% - 1rem) / 5) * ${activeIndex} + (((100% - 1rem) / 5) - 1.5rem) / 2)`,
+            }}
+          />
+        )}
         {items.map(it => {
           const on = tab === it.id;
           if (it.primary) {
@@ -400,23 +410,18 @@ function WaiterBottomNav({ tab, setTab, activeCount }) {
           }
           return (
             <button key={it.id} onClick={() => setTab(it.id)}
-              className="tap flex-1 grid place-items-center relative"
+              className="tap flex-1 relative flex flex-col items-center justify-center gap-1 pt-1 pb-2"
               style={{ color: on ? NAVY : '#94a3b8' }}>
-              <div className="flex flex-col items-center gap-0.5">
-                <div className="relative">
-                  <it.Ico size={22} strokeWidth={on ? 2.4 : 2}/>
-                  {it.badge > 0 && (
-                    <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full text-[10px] font-extrabold text-white grid place-items-center"
-                      style={{ background: '#dc2626' }}>
-                      {it.badge}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] font-semibold">{it.label}</span>
+              <div className="relative h-6 w-6 grid place-items-center">
+                <it.Ico size={22} strokeWidth={on ? 2.4 : 2}/>
+                {it.badge > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full text-[10px] font-extrabold text-white grid place-items-center"
+                    style={{ background: '#dc2626' }}>
+                    {it.badge}
+                  </span>
+                )}
               </div>
-              {on && (
-                <span className="absolute top-1 h-1 w-6 rounded-full" style={{ background: NAVY }}/>
-              )}
+              <span className="text-[10px] leading-none font-semibold">{it.label}</span>
             </button>
           );
         })}
