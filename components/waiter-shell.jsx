@@ -44,7 +44,23 @@ const NAV_ITEMS = [
   { id: 'profile', label: 'Profil',         Ico: User },
 ];
 
-const CAT_ICONS = new Set(['Wheat', 'Flame', 'Salad', 'Utensils', 'CupSoda', 'IceCream']);
+const CAT_ICON_ALIASES = {
+  Wheat: 'Wheat',
+  Flame: 'Flame',
+  Salad: 'Salad',
+  Utensils: 'Utensils',
+  UtensilsCrossed: 'Utensils',
+  Soup: 'Utensils',
+  ChefHat: 'Utensils',
+  CupSoda: 'CupSoda',
+  Coffee: 'CupSoda',
+  Cake: 'IceCream',
+  IceCream: 'IceCream',
+};
+
+function normalizeCategoryIcon(icon) {
+  return CAT_ICON_ALIASES[icon] || 'Utensils';
+}
 
 // manager-adapter buyurtmasini waiter shakliga o'tkazadi
 function toWaiterOrder(o) {
@@ -170,7 +186,7 @@ export default function WaiterShell() {
 
         setWaiterData({
           menu: items.map(m => ({ id: m.id, cat: m.category, name: m.name, price: m.price, desc: '' })),
-          categories: cats.map(c => ({ id: c.id, name: c.name, icon: CAT_ICONS.has(c.icon) ? c.icon : 'Utensils' })),
+          categories: cats.map(c => ({ id: c.id, name: c.name, icon: normalizeCategoryIcon(c.icon) })),
           tables,
         });
 

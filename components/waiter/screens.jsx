@@ -76,6 +76,11 @@ function StickyFooter({ children }) {
 }
 
 function CategoryGlyph({ cat }) {
+  const category = CATEGORIES.find(c => c.id === cat);
+  if (category?.icon && CATEGORY_ICON_MAP[category.icon]) {
+    const I = CATEGORY_ICON_MAP[category.icon];
+    return <I size={34} style={{ color: NAVY }} strokeWidth={1.6} />;
+  }
   const map = { plov: Wheat, shashlik: Flame, salads: Salad, soups: Utensils, drinks: CupSoda, desserts: IceCream };
   const I = map[cat] || Utensils;
   return <I size={34} style={{ color: NAVY }} strokeWidth={1.6} />;
@@ -684,13 +689,18 @@ function StepMenu({ draft, setDraft, onBack, onNext }) {
             <ChevronLeft size={18}/>
           </button>
           <button onClick={onNext} disabled={totalItems === 0}
-            className="tap h-12 flex-1 rounded-2xl text-white font-semibold disabled:opacity-40 inline-flex items-center justify-between px-4"
+            className="tap h-12 min-w-0 flex-1 rounded-2xl text-white disabled:opacity-40 inline-flex items-center gap-3 px-3.5"
             style={{ background: NAVY }}>
-            <span className="inline-flex items-center gap-2">
-              <span className="bg-white/20 px-2 py-0.5 rounded-md text-[12px] font-bold">{totalItems}</span>
-              Buyurtmani koʻrib chiqish
+            <span className="min-w-0 flex-1 inline-flex items-center gap-2">
+              <span className="shrink-0 bg-white/20 min-w-7 h-7 px-2 rounded-lg text-[12px] font-extrabold grid place-items-center tabular-nums">{totalItems}</span>
+              <span className="min-w-0 text-left leading-tight">
+                <span className="block text-[13px] font-bold truncate">Koʻrib chiqish</span>
+                <span className="block text-[10.5px] font-semibold text-white/70 truncate">Buyurtmani tasdiqlash</span>
+              </span>
             </span>
-            <span className="tabular-nums">{fmt(totalAmt)} UZS</span>
+            <span className="shrink-0 max-w-[45%] px-2.5 py-1.5 rounded-xl bg-white/15 text-[12px] font-extrabold tabular-nums truncate">
+              {fmt(totalAmt)}
+            </span>
           </button>
         </div>
       </StickyFooter>
@@ -718,11 +728,11 @@ function StepReview({ draft, setDraft, onBack, onSubmit }) {
     <>
       <div className="px-5 md:px-8 pt-2">
         <div className="rounded-2xl bg-white border border-slate-200/70 p-4 flex items-center gap-3 max-w-2xl">
-          <div className="h-11 w-11 rounded-xl grid place-items-center" style={{ background: NAVY }}>
-            <span className="text-white font-extrabold text-[15px]">{table?.label.replace(/\s/g, '')}</span>
+          <div className="min-w-[56px] h-11 px-2 rounded-xl grid place-items-center shrink-0" style={{ background: NAVY }}>
+            <span className="text-white font-extrabold text-[12px] leading-none tabular-nums whitespace-nowrap">{table?.label}</span>
           </div>
-          <div className="flex-1">
-            <div className="text-[15px] font-bold text-slate-900">{table?.zone} · {table?.label}</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[15px] font-bold text-slate-900 truncate">{table?.zone} · {table?.label}</div>
             <div className="text-[12px] text-slate-500">{table?.seats} oʻrin · {draft.items.reduce((s, i) => s + i.qty, 0)} ta taom</div>
           </div>
           <button onClick={onBack} className="tap h-9 px-3 rounded-full bg-slate-100 text-[12px] font-semibold text-slate-700">Tahrirlash</button>
