@@ -71,7 +71,9 @@ function OrderDetail({ order, menu = [], categories = [], serviceRate = 0.1, onC
 
   // Tahrirlashda buyurtmaning o'z xizmat haqidan foydalanamiz (backend recalc ham shuni ishlatadi)
   const orderRate      = order.serviceRate != null ? order.serviceRate / 100 : serviceRate;
-  const editSubtotal   = editItems.reduce((s, it) => s + it.price * it.qty, 0);
+  const editSubtotal   = editItems.reduce((s, it) => (
+    it.status === 'cancelled' ? s : s + it.price * it.qty
+  ), 0);
   const editServiceFee = Math.round(editSubtotal * orderRate);
   const editTotal      = editSubtotal + editServiceFee;
 

@@ -296,7 +296,10 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
   const svc     = (typeof order.serviceFee === 'number') ? order.serviceFee : Math.max(0, tot - sub);
   // Tahrirlashda buyurtmaning o'z xizmat haqi (backend recalc ham shuni ishlatadi); bo'lmasa joriy sozlama
   const editRate = (order.serviceRate != null ? order.serviceRate / 100 : SERVICE_RATE);
-  const editSub = editItems.reduce((s, it) => s + ((it.price ?? findItem(it.menuId)?.price ?? 0) * it.qty), 0);
+  const editSub = editItems.reduce((s, it) => {
+    if (it.status === 'cancelled') return s;
+    return s + ((it.price ?? findItem(it.menuId)?.price ?? 0) * it.qty);
+  }, 0);
   const editSvc = Math.round(editSub * editRate);
   const editTot = editSub + editSvc;
 
