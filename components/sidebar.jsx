@@ -76,18 +76,6 @@ export function Sidebar({ active, onNavigate, user, openCount }) {
             );
           })}
         </ul>
-
-        <div className="mt-6 mx-1 p-4 rounded-xl bg-gradient-to-br from-navy-50 to-accent-50 border border-navy-100">
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-6 h-6 rounded-md bg-navy-700 flex items-center justify-center">
-              <Icon name="Sparkles" size={12} className="text-white" />
-            </div>
-            <div className="text-xs font-semibold text-navy-800">Maslahat</div>
-          </div>
-          <p className="text-[11.5px] leading-relaxed text-navy-700">
-            <kbd className="px-1 py-0.5 rounded bg-white border border-navy-100 font-mono text-[10px]">⌘K</kbd> bilan istalgan buyurtma yoki taomga oʻting.
-          </p>
-        </div>
       </nav>
 
       <div className="px-3 py-3 border-t border-ink-100 mt-2">
