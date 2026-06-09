@@ -12,8 +12,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # NEXT_PUBLIC_* o'zgaruvchilar build vaqtida client kodga joylanadi
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

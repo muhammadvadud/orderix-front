@@ -19,7 +19,7 @@ services:
       # Docker ichida fayl o'zgarishlarini sezish uchun (hot reload)
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
-      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
     volumes:
       # Loyiha kodi jonli ulanadi — saqlasangiz darhol yangilanadi
       - .:/app
@@ -35,7 +35,7 @@ services:
       dockerfile: ./Dockerfile
       args:
         # NEXT_PUBLIC_* build vaqtida client kodga joylanadi
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
     restart: always
     ports:
       - "${WEB_PORT:-3000}:3000"
