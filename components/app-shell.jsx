@@ -94,10 +94,9 @@ export default function AppShell() {
         zt.zones.forEach(z => { zonesById[z.id] = z; });
         st.forEach(u => { staffById[u.id] = u; });
         setOrders(await svc.listOrders('', { tablesById, zonesById, staffById }));
+        setLoading(false);
       } catch (e) {
         console.error('Maʼlumotlarni yuklashda xatolik:', e);
-      } finally {
-        setLoading(false);
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps

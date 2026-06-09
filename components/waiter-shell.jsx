@@ -199,10 +199,9 @@ export default function WaiterShell() {
         const lk = { tablesById, zonesById, staffById: {} };
         setLookups(lk);
         await reloadOrders(lk);
+        setReady(true);
       } catch (e) {
         console.error('Ofitsiant maʼlumotlarini yuklashda xatolik:', e);
-      } finally {
-        setReady(true);
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
