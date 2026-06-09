@@ -1003,21 +1003,21 @@ export function ProfileScreen({ onLogout }) {
 
           <div className="rounded-2xl bg-white border border-slate-200/70 divide-y divide-slate-100">
             <button onClick={copyPhone}
-              className="tap w-full px-4 h-16 flex items-center gap-3 text-left relative">
+              className="tap w-full px-4 py-3.5 flex items-center gap-3 text-left relative">
               <div className="h-8 w-8 rounded-lg bg-slate-100 grid place-items-center text-slate-600 shrink-0">
                 <Phone size={15}/>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[14px] font-semibold text-slate-800">Telefon</div>
-                <div className="mt-0.5 inline-flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1">
-                  <span className="text-[13px] font-mono font-semibold text-slate-700 tabular-nums">{phoneDisplay}</span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Copy</span>
+                <div className="mt-0.5 inline-flex max-w-full items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1">
+                  <span className="max-w-[170px] sm:max-w-none truncate text-[13px] font-mono font-semibold text-slate-700 tabular-nums">{phoneDisplay}</span>
+                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Nusxalash</span>
                 </div>
               </div>
-              <span className={`text-[11px] font-semibold transition-colors ${copied ? 'text-emerald-600' : 'text-slate-400'}`}>
-                {copied ? 'Nusxalandi' : 'Bosib nusxalash'}
+              <span className={`hidden sm:inline text-[11px] font-semibold transition-colors ${copied ? 'text-emerald-600' : 'text-slate-400'}`}>
+                {copied ? 'Nusxalandi' : 'Nusxalash'}
               </span>
-              <ChevronRight size={14} className={`transition-colors ${copied ? 'text-emerald-500' : 'text-slate-400'}`} />
+              <ChevronRight size={14} className={`shrink-0 transition-colors ${copied ? 'text-emerald-500' : 'text-slate-400'}`} />
             </button>
             <ProfileRow icon={Bell}     label="Bildirishnomalar" value="Yoqilgan"/>
             <ProfileRow icon={Settings} label="Sozlamalar"       value="O'zbek"/>
