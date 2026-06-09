@@ -6,9 +6,19 @@ import { getSettings, updateSettings } from '@/lib/services';
 
 function Toggle({ checked, onChange }) {
   return (
-    <button onClick={() => onChange(!checked)}
-      className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${checked ? 'bg-accent' : 'bg-ink-200'}`}>
-      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={checked ? 'Bildirishnomani o‘chirish' : 'Bildirishnomani yoqish'}
+      onClick={() => onChange(!checked)}
+      className={`w-11 h-6 rounded-full relative transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 ${checked ? 'bg-accent' : 'bg-ink-200'} cursor-pointer`}
+    >
+      <span
+        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+          checked ? 'translate-x-[22px]' : 'translate-x-0.5'
+        }`}
+      />
     </button>
   );
 }
