@@ -48,10 +48,10 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
             <button
               type="button"
               onClick={() => setShowPassword(s => !s)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 inline-flex items-center justify-center text-ink-400 hover:text-ink-700 rounded-md hover:bg-ink-100"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 inline-flex items-center justify-center rounded-md text-ink-500 hover:text-ink-800 hover:bg-ink-100"
             >
               <span className="sr-only">{showPassword ? 'Parolni yashirish' : 'Parolni ko‘rsatish'}</span>
-              <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={16} />
+              <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={18} strokeWidth={2.25} className="text-current" />
             </button>
           </div>
           {password && !passwordOk && (
