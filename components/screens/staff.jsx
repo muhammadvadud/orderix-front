@@ -8,9 +8,12 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
   const [name, setName]   = useState(initial?.name || '');
   const [phone, setPhone] = useState(initial?.phone ? formatPhone(initial.phone) : '+998 ');
   const [role, setRole]   = useState(initial?.role || roles[0]?.value || '');
+  const [password, setPassword] = useState('');
 
   const phoneOk = isValidPhone(phone);
   const showPhoneError = phone.replace(/[\s+]/g, '').length > 3 && !phoneOk;
+  const isNew = !initial;
+  const passwordOk = !isNew || password.trim().length >= 6;
 
   return (
     <div className="space-y-4">
@@ -29,9 +32,30 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
         <Select value={role} onChange={e => setRole(e.target.value)}
                 options={roles.map(r => ({ value: r.value, label: r.label }))} />
       </Field>
+      {isNew && (
+        <Field label="Parol" hint="Kamida 6 ta belgi kiriting">
+          <Input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="Parol"
+            icon="Lock"
+          />
+          {password && !passwordOk && (
+            <div className="text-[11px] text-danger mt-1">Parol kamida 6 ta belgidan iborat bo‘lishi kerak.</div>
+          )}
+        </Field>
+      )}
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Bekor qilish</Button>
-        <Button variant="primary" icon="Check" onClick={() => onSave({ name, phone, role })} disabled={!name.trim() || !phoneOk}>Saqlash</Button>
+        <Button
+          variant="primary"
+          icon="Check"
+          onClick={() => onSave({ name, phone, role, password: isNew ? password : undefined })}
+          disabled={!name.trim() || !phoneOk || !passwordOk}
+        >
+          Saqlash
+        </Button>
       </div>
     </div>
   );
