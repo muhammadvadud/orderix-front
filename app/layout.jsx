@@ -5,6 +5,13 @@ export const metadata = {
   description: 'Restoran boshqaruv tizimi',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="uz">
