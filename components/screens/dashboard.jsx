@@ -219,7 +219,10 @@ export default function DashboardScreen({ orders, staff = [], userName = '', onO
     return t ? isSameDay(t, now) : false;
   });
   const openCount = today.filter(o => o.status === 'preparing').length;
-  const revenue = today.filter(o => o.status !== 'preparing' && o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
+  const revenue = orders.filter(o => {
+    const closedAt = o.closedAt instanceof Date ? o.closedAt : (o.closedAt ? new Date(o.closedAt) : null);
+    return o.status === 'closed' && closedAt && isSameDay(closedAt, now);
+  }).reduce((s, o) => s + o.total, 0);
   const waiterIds = new Set(today.map(o => o.waiterId));
   const waiterCount = staff.filter(s => s.roleRaw === 'waiter').length;
 
