@@ -6,6 +6,7 @@ import { getSession, clearSession } from '@/lib/api';
 import { connectRealtime } from '@/lib/realtime';
 import { routeForRole, normalizeRole, clearRoleCookie } from '@/lib/auth';
 import * as svc from '@/lib/services';
+import { Logo } from './sidebar';
 import {
   MyOrdersScreen, NewOrderScreen, TablesScreen, ProfileScreen,
   HistoryScreen, OrderDetailSheet, Toast,
@@ -287,6 +288,7 @@ export default function WaiterShell() {
     <div className="waiter-app min-h-screen md:flex" style={{ background: BG, fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
       <WaiterSidebar tab={tab} setTab={setTab} activeCount={activeCount} onLogout={handleLogout} />
       <div className="flex-1 min-w-0 flex flex-col">
+        <WaiterMobileHeader />
         <WaiterTopBar />
         <main className="flex-1 min-w-0 relative pb-28 md:pb-8">
           <div className="mx-auto w-full max-w-7xl">
@@ -304,6 +306,14 @@ export default function WaiterShell() {
       <OrderDetailSheet order={historyOrder} onClose={() => { setHistoryOrderId(null); setOrderDetail(null); }} readOnly onAdvance={() => {}} onEdit={() => {}} onChangeItemStatus={() => {}} />
       <Toast message={toast} onDone={() => setToast(null)} />
     </div>
+  );
+}
+
+function WaiterMobileHeader() {
+  return (
+    <header className="md:hidden sticky top-0 z-20 px-5 py-3 bg-white/90 backdrop-blur-md border-b border-slate-200/70">
+      <Logo />
+    </header>
   );
 }
 
@@ -337,15 +347,8 @@ function WaiterTopBar() {
 function WaiterSidebar({ tab, setTab, activeCount, onLogout }) {
   return (
     <aside className="hidden md:flex md:flex-col md:w-[240px] lg:w-[260px] shrink-0 sticky top-0 h-screen bg-white border-r border-slate-200/70">
-      <div className="px-5 pt-6 pb-5 flex items-center gap-2.5">
-        <div className="h-10 w-10 rounded-xl text-white grid place-items-center font-extrabold text-[14px] tracking-tight"
-          style={{ background: `linear-gradient(135deg, ${NAVY}, ${ACCENT})` }}>
-          Ox
-        </div>
-        <div>
-          <div className="text-[16px] font-extrabold text-slate-900 leading-none">OrderiX</div>
-          <div className="text-[11px] text-slate-500 mt-1">Ofitsiant paneli</div>
-        </div>
+      <div className="px-5 pt-6 pb-5">
+        <Logo />
       </div>
 
       <nav className="px-3 flex-1 flex flex-col gap-1 mt-2">
