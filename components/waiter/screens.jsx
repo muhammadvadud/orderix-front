@@ -1046,10 +1046,11 @@ export function ProfileScreen({ onLogout }) {
         </div>
 
         <div className="lg:col-span-2 space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 md:gap-3">
             <StatCard icon={ClipboardList} label="Bugungi buyurtmalar" value={WAITER.ordersToday} />
             <StatCard icon={TrendingUp}    label="Bu hafta"            value={WAITER.ordersWeek} />
             <StatCard icon={Receipt}       label="Bugungi ish haqi"    value={fmt(WAITER.serviceFeeToday || 0)} unit="UZS" small />
+            <StatCard icon={Receipt}       label="Haftalik ish haqi"   value={fmt(WAITER.serviceFeeWeek || 0)} unit="UZS" small />
             <StatCard icon={Clock}         label="Smena"               value={WAITER.shift} small />
           </div>
 
