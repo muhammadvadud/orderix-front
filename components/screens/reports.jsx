@@ -6,10 +6,77 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Icon } from '../Icon';
-import { Card, Button, Select, Input, PageHeader, EmptyRow } from '../ui';
+import { Card, Button, Select, Input, PageHeader, EmptyRow, Modal, EmptyState } from '../ui';
 import { formatUZS, formatUZSShort, uzDateShort } from '@/lib/data';
 import { seriesStats, topItems, itemSeries, waiterServiceFees } from '@/lib/services';
 import { exportXLSX, seriesToRows, dateStamp } from '@/lib/export';
+
+const TOP_ITEMS_PAGE_SIZE = 10;
+
+function TopItemsModal({ open, onClose, items, loading, page, onPageChange, periodLabel }) {
+  const totalPages = Math.max(1, Math.ceil(items.length / TOP_ITEMS_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * TOP_ITEMS_PAGE_SIZE;
+  const paged = items.slice(start, start + TOP_ITEMS_PAGE_SIZE);
+
+  return (
+    <Modal open={open} onClose={onClose} title="Top taomlar" width={720}>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-ink-500">{periodLabel} · sotilgan miqdor bo'yicha</p>
+          <span className="text-xs num text-ink-500">{items.length} ta taom</span>
+        </div>
+
+        {loading ? (
+          <div className="h-40 flex items-center justify-center text-ink-500">
+            <span className="w-4 h-4 rounded-full border-2 border-ink-200 border-t-navy-700 animate-spin mr-2" />
+            Yuklanmoqda...
+          </div>
+        ) : paged.length === 0 ? (
+          <EmptyState icon="UtensilsCrossed" text="Hali sotilgan taom yo'q" />
+        ) : (
+          <div className="overflow-x-auto border border-ink-100 rounded-xl">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[11px] uppercase tracking-wider text-ink-400 bg-ink-50/50">
+                  <th className="font-semibold px-4 py-2.5 w-14">№</th>
+                  <th className="font-semibold px-3 py-2.5">Taom</th>
+                  <th className="font-semibold px-3 py-2.5 text-right">Soni</th>
+                  <th className="font-semibold px-4 py-2.5 text-right">Tushum</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-100">
+                {paged.map((it, i) => (
+                  <tr key={`${it.menuId}-${start + i}`} className="hover:bg-ink-50/60">
+                    <td className="px-4 py-3 num text-ink-500">{start + i + 1}</td>
+                    <td className="px-3 py-3 font-medium text-ink-800 min-w-[180px]">{it.name}</td>
+                    <td className="px-3 py-3 text-right num text-ink-700">{it.qty}</td>
+                    <td className="px-4 py-3 text-right num font-semibold text-ink-900">{formatUZSShort(it.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-xs text-ink-500 num">
+            {items.length ? `${start + 1}-${Math.min(start + TOP_ITEMS_PAGE_SIZE, items.length)} / ${items.length}` : '0 / 0'}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" icon="ChevronLeft" disabled={safePage <= 1 || loading} onClick={() => onPageChange(safePage - 1)}>
+              Oldingi
+            </Button>
+            <span className="min-w-12 text-center text-xs num text-ink-600">{safePage}/{totalPages}</span>
+            <Button variant="outline" size="sm" iconRight="ChevronRight" disabled={safePage >= totalPages || loading} onClick={() => onPageChange(safePage + 1)}>
+              Keyingi
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
   const [range, setRange]   = useState('30d');
@@ -21,6 +88,10 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
   const [itemId, setItemId]   = useState('');
   const [itemData, setItemData] = useState([]);
   const [serviceFees, setServiceFees] = useState([]);
+  const [allTopItems, setAllTopItems] = useState([]);
+  const [topItemsOpen, setTopItemsOpen] = useState(false);
+  const [topItemsLoading, setTopItemsLoading] = useState(false);
+  const [topItemsPage, setTopItemsPage] = useState(1);
 
   // Kun (sana) yorliqlari ustma-ust tushmasligi uchun ko'rsatiladigan yorliqlar
   // sonini cheklaymiz: kichik ekranda ~5 ta, kattada ~9 ta yorliq.
@@ -69,6 +140,16 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
 
   function exportExcel() {
     exportXLSX(`hisobot-${dateStamp()}.xlsx`, seriesToRows(data), 'Hisobot');
+  }
+
+  function openTopItemsModal() {
+    setTopItemsOpen(true);
+    setTopItemsPage(1);
+    setTopItemsLoading(true);
+    topItems({ range, dateFrom, dateTo, limit: 50 })
+      .then(rows => setAllTopItems(rows))
+      .catch(() => setAllTopItems([]))
+      .finally(() => setTopItemsLoading(false));
   }
 
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
@@ -301,7 +382,7 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
               <h3 className="font-semibold text-ink-900">Top 10 taom</h3>
               <p className="text-xs text-ink-500 mt-0.5">Sotilgan miqdor boʻyicha</p>
             </div>
-            <button className="text-xs text-accent font-medium hover:underline">Barchasi</button>
+            <button className="text-xs text-accent font-medium hover:underline" onClick={openTopItemsModal}>Barchasi</button>
           </div>
           <table className="w-full text-sm">
             <thead>
@@ -365,6 +446,16 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
         </div>
         )}
       </Card>
+
+      <TopItemsModal
+        open={topItemsOpen}
+        onClose={() => setTopItemsOpen(false)}
+        items={allTopItems}
+        loading={topItemsLoading}
+        page={topItemsPage}
+        onPageChange={setTopItemsPage}
+        periodLabel={periodLabel}
+      />
     </div>
   );
 }
