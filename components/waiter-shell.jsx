@@ -210,6 +210,7 @@ export default function WaiterShell() {
           ordersToday: stats.orders_today ?? 0,
           ordersWeek: stats.orders_week ?? 0,
           revenueToday: Number(stats.revenue_today ?? 0),
+          serviceFeeToday: Number(stats.service_fee_today ?? 0),
           rating: 5.0,
         }});
 

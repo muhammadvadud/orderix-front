@@ -8,7 +8,7 @@ import {
 import { Icon } from '../Icon';
 import { Card, Button, Select, Input, PageHeader, EmptyRow } from '../ui';
 import { formatUZS, formatUZSShort, uzDateShort } from '@/lib/data';
-import { seriesStats, topItems, itemSeries } from '@/lib/services';
+import { seriesStats, topItems, itemSeries, waiterServiceFees } from '@/lib/services';
 import { exportXLSX, seriesToRows, dateStamp } from '@/lib/export';
 
 export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
@@ -20,6 +20,7 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
   const [topList, setTopList] = useState([]);
   const [itemId, setItemId]   = useState('');
   const [itemData, setItemData] = useState([]);
+  const [serviceFees, setServiceFees] = useState([]);
 
   // Kun (sana) yorliqlari ustma-ust tushmasligi uchun ko'rsatiladigan yorliqlar
   // sonini cheklaymiz: kichik ekranda ~5 ta, kattada ~9 ta yorliq.
@@ -42,6 +43,9 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
     topItems({ range, dateFrom, dateTo, limit: 10 })
       .then(t => { if (active) setTopList(t); })
       .catch(() => { if (active) setTopList([]); });
+    waiterServiceFees({ range, dateFrom, dateTo })
+      .then(rows => { if (active) setServiceFees(rows); })
+      .catch(() => { if (active) setServiceFees([]); });
     return () => { active = false; };
   }, [range, dateFrom, dateTo, liveKey]);
 
@@ -70,6 +74,7 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
   const totalOrd = data.reduce((s, d) => s + d.orders, 0);
   const avgTicket = totalOrd ? Math.round(totalRev / totalOrd) : 0;
+  const totalServiceFee = serviceFees.reduce((s, r) => s + r.serviceFee, 0);
 
   const tooltipStyle = {
     background: 'white',
@@ -120,7 +125,7 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
         </div>
       </Card>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-5">
         <Card className="!p-4 sm:!p-5">
           <div className="flex items-center justify-between gap-2">
             <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Tushum</div>
@@ -163,6 +168,17 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
           </div>
           <div className="mt-2 text-lg sm:text-2xl font-bold num text-ink-900 leading-tight">
             {orders.filter(o => o.status === 'preparing').length}
+          </div>
+        </Card>
+        <Card className="!p-4 sm:!p-5 col-span-2 lg:col-span-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ink-400 font-semibold">Xizmat haqi</div>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#fff7ed', color: '#b45309' }}>
+              <Icon name="HandCoins" size={16} />
+            </div>
+          </div>
+          <div className="mt-2 text-lg sm:text-2xl font-bold num text-ink-900 leading-tight">
+            {formatUZSShort(totalServiceFee)} <span className="text-xs sm:text-sm text-ink-400 font-medium">soʻm</span>
           </div>
         </Card>
       </div>
@@ -210,6 +226,37 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
           </ResponsiveContainer>
         </div>
         )}
+      </Card>
+
+      <Card padding={false} className="mb-4">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-ink-100">
+          <h3 className="font-semibold text-ink-900">Ofitsiantlar xizmat haqi</h3>
+          <p className="text-xs text-ink-500 mt-0.5">{periodLabel} · yopilgan buyurtmalar bo'yicha</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] uppercase tracking-wider text-ink-400 bg-ink-50/40">
+                <th className="font-semibold px-4 sm:px-5 py-2.5">Sana</th>
+                <th className="font-semibold px-3 py-2.5">Xodim</th>
+                <th className="font-semibold px-3 py-2.5 text-right">Buyurtma</th>
+                <th className="font-semibold px-4 sm:px-5 py-2.5 text-right">Xizmat haqi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-100">
+              {serviceFees.length === 0 ? (
+                <EmptyRow colSpan={4} icon="HandCoins" text="Bu davr uchun xizmat haqi yo'q" />
+              ) : serviceFees.map((row, i) => (
+                <tr key={`${row.date}-${row.waiterId}-${i}`} className="hover:bg-ink-50/60">
+                  <td className="px-4 sm:px-5 py-2.5 text-ink-600 text-xs sm:text-sm">{uzDateShort(row.date)}</td>
+                  <td className="px-3 py-2.5 text-ink-800 font-medium text-xs sm:text-sm">{row.waiterName}</td>
+                  <td className="px-3 py-2.5 text-right num text-ink-700 text-xs sm:text-sm">{row.orders}</td>
+                  <td className="px-4 sm:px-5 py-2.5 text-right num font-semibold text-ink-900 text-xs sm:text-sm">{formatUZSShort(row.serviceFee)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
