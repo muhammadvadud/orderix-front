@@ -135,7 +135,7 @@ export default function AppShell() {
     const name = u.full_name || u.username || 'Foydalanuvchi';
     const parts = name.trim().split(/\s+/);
     const avatar = (parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase();
-    return { name, role: u.role === 'manager' ? 'Menejer' : (u.role === 'admin' ? 'Admin' : u.role), avatar, color: u.color || '#1F4E79' };
+    return { id: u.id, name, role: u.role === 'manager' ? 'Menejer' : (u.role === 'admin' ? 'Admin' : u.role), roleRaw: u.role, avatar, color: u.color || '#1F4E79' };
   }, [session]);
 
   const openCount = orders.filter(o => o.status === 'preparing').length;
@@ -309,7 +309,14 @@ export default function AppShell() {
             />
           )}
           {screen === 'staff' && (
-            <StaffScreen staff={staff} roles={roles} zonesCount={zones.length} onSaveStaff={saveStaff} onRemoveStaff={removeStaff} />
+            <StaffScreen
+              staff={staff}
+              roles={roles}
+              zonesCount={zones.length}
+              currentUserId={user.id}
+              onSaveStaff={saveStaff}
+              onRemoveStaff={removeStaff}
+            />
           )}
           {screen === 'reports' && (
             <ReportsScreen orders={orders} menu={menu} liveKey={reportsRefresh} />

@@ -5,7 +5,7 @@ import { Card, Button, IconButton, Avatar, RoleBadge, Input, Select, Modal, Fiel
 import { formatDate } from '@/lib/data';
 import { isValidPhone, formatPhone, formatPhoneInput } from '@/lib/phone';
 
-function StaffForm({ initial, roles = [], onSave, onCancel }) {
+function StaffForm({ initial, roles = [], roleLocked = false, onSave, onCancel }) {
   const [name, setName]   = useState(initial?.name || '');
   const [phone, setPhone] = useState(initial?.phone ? formatPhone(initial.phone) : '+998 ');
   const [role, setRole]   = useState(initial?.role || roles[0]?.value || '');
@@ -30,10 +30,18 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
           <div className="text-[11px] text-danger mt-1">Telefon raqami toʻliq emas. Masalan: +998 90 123 45 67</div>
         )}
       </Field>
-      <Field label="Lavozim">
-        <Select value={role} onChange={e => setRole(e.target.value)}
-                options={roles.map(r => ({ value: r.value, label: r.label }))} />
-      </Field>
+      {roleLocked ? (
+        <Field label="Lavozim">
+          <div className="h-10 rounded-lg border border-ink-200 bg-ink-50 px-3 flex items-center">
+            <RoleBadge role={initial?.role || role} />
+          </div>
+        </Field>
+      ) : (
+        <Field label="Lavozim">
+          <Select value={role} onChange={e => setRole(e.target.value)}
+                  options={roles.map(r => ({ value: r.value, label: r.label }))} />
+        </Field>
+      )}
       {isNew && (
         <Field label="Parol" hint="Kamida 6 ta belgi kiriting">
           <div className="relative">
@@ -64,7 +72,7 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
         <Button
           variant="primary"
           icon="Check"
-          onClick={() => onSave({ name, phone, role, password: isNew ? password : undefined })}
+          onClick={() => onSave({ name, phone, role: roleLocked ? initial?.role : role, password: isNew ? password : undefined })}
           disabled={!name.trim() || !phoneOk || !passwordOk}
         >
           Saqlash
@@ -74,12 +82,42 @@ function StaffForm({ initial, roles = [], onSave, onCancel }) {
   );
 }
 
-export default function StaffScreen({ staff, roles = [], zonesCount = 0, onSaveStaff, onRemoveStaff }) {
+function CurrentManagerCard({ manager, onEdit }) {
+  if (!manager) return null;
+  return (
+    <Card className="mb-4 sm:mb-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Avatar initials={manager.avatar} color={manager.color} size={48} />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="font-semibold text-ink-900 truncate">{manager.name}</div>
+              <span className="inline-flex items-center rounded-full bg-navy-50 px-2 py-0.5 text-[11px] font-semibold text-navy-700">
+                Siz
+              </span>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <RoleBadge role={manager.role} />
+              <span className="text-[11px] text-ink-500 num">{manager.phone}</span>
+            </div>
+          </div>
+        </div>
+        <Button variant="outline" icon="Pencil" size="sm" onClick={onEdit}>
+          Tahrirlash
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+export default function StaffScreen({ staff, roles = [], zonesCount = 0, currentUserId, onSaveStaff, onRemoveStaff }) {
   const [modal, setModal]         = useState(null);
   const [roleFilter, setRoleFilter] = useState('');
   const [query, setQuery]         = useState('');
+  const currentManager = staff.find(s => String(s.id) === String(currentUserId));
 
   const filtered = staff.filter(s => {
+    if (currentManager && String(s.id) === String(currentManager.id)) return false;
     if (roleFilter && s.role !== roleFilter) return false;
     if (query && !(s.name + s.phone).toLowerCase().includes(query.toLowerCase())) return false;
     return true;
@@ -101,6 +139,7 @@ export default function StaffScreen({ staff, roles = [], zonesCount = 0, onSaveS
   }
 
   const editing = modal && modal.editId ? staff.find(s => s.id === modal.editId) : null;
+  const editingCurrentManager = !!(editing && currentManager && String(editing.id) === String(currentManager.id));
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto">
@@ -119,6 +158,8 @@ export default function StaffScreen({ staff, roles = [], zonesCount = 0, onSaveS
         <p className="text-xs text-ink-500">{staff.length} ta xodim</p>
         <Button variant="primary" icon="UserPlus" size="sm" onClick={() => setModal('add')}>Qoʻshish</Button>
       </div>
+
+      <CurrentManagerCard manager={currentManager} onEdit={() => setModal({ editId: currentManager.id })} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-5">
         <Card className="!p-3 sm:!p-4">
@@ -214,7 +255,15 @@ export default function StaffScreen({ staff, roles = [], zonesCount = 0, onSaveS
       </Card>
 
       <Modal open={!!modal} onClose={() => setModal(null)} title={editing ? 'Xodimni tahrirlash' : 'Xodim qoʻshish'} width={460}>
-        {modal && <StaffForm initial={editing} roles={roles} onSave={saveStaff} onCancel={() => setModal(null)} />}
+        {modal && (
+          <StaffForm
+            initial={editing}
+            roles={roles}
+            roleLocked={editingCurrentManager}
+            onSave={saveStaff}
+            onCancel={() => setModal(null)}
+          />
+        )}
       </Modal>
     </div>
   );
