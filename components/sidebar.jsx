@@ -165,10 +165,10 @@ export function BottomTabBar({ active, onNavigate, onOpenMore, openCount }) {
           const isActive = active === item.id;
           return (
             <button key={item.id} onClick={() => onNavigate(item.id)}
-              className={`relative flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
-                isActive ? 'text-navy-700' : 'text-ink-500'
+              className={`mobile-nav-tab relative flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
+                isActive ? 'text-navy-700 is-active' : 'text-ink-500'
               }`}>
-              <div className="relative">
+              <div className="mobile-nav-icon relative">
                 <Icon name={item.icon} size={22} strokeWidth={isActive ? 2.25 : 1.8} />
                 {item.id === 'orders' && openCount > 0 && (
                   <span className="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-accent text-white text-[9px] font-bold inline-flex items-center justify-center">
@@ -177,17 +177,19 @@ export function BottomTabBar({ active, onNavigate, onOpenMore, openCount }) {
                 )}
               </div>
               <span className={`text-[10.5px] font-medium ${isActive ? '' : 'text-ink-500'}`}>{item.label}</span>
-              {isActive && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-navy-700" />}
+              {isActive && <span className="mobile-nav-indicator absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-navy-700" />}
             </button>
           );
         })}
         <button onClick={onOpenMore}
-          className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
-            !BOTTOM_TABS.includes(active) ? 'text-navy-700' : 'text-ink-500'
+          className={`mobile-nav-tab relative flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
+            !BOTTOM_TABS.includes(active) ? 'text-navy-700 is-active' : 'text-ink-500'
           }`}>
-          <Icon name="Menu" size={22} strokeWidth={!BOTTOM_TABS.includes(active) ? 2.25 : 1.8} />
+          <span className="mobile-nav-icon">
+            <Icon name="Menu" size={22} strokeWidth={!BOTTOM_TABS.includes(active) ? 2.25 : 1.8} />
+          </span>
           <span className="text-[10.5px] font-medium">Boshqa</span>
-          {!BOTTOM_TABS.includes(active) && <span className="absolute top-0 right-[10%] w-8 h-0.5 rounded-full bg-navy-700" />}
+          {!BOTTOM_TABS.includes(active) && <span className="mobile-nav-indicator absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-navy-700" />}
         </button>
       </div>
     </nav>

@@ -312,7 +312,6 @@ export default function LocationsScreen({ orders, zones, tables, onAddZone, onAd
     all:      tablesWithInfo.length,
     free:     tablesWithInfo.filter(x => x.info.status === 'free').length,
     occupied: tablesWithInfo.filter(x => x.info.status === 'occupied').length,
-    dirty:    tablesWithInfo.filter(x => x.info.status === 'dirty').length,
   };
 
   const openEntry = openTableId ? tablesWithInfo.find(x => x.table.id === openTableId) : null;
@@ -352,11 +351,10 @@ export default function LocationsScreen({ orders, zones, tables, onAddZone, onAd
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-5">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-5">
         {[
-          { key: 'free',     label: 'Boʻsh',         color: '#27AE60', n: totals.free },
-          { key: 'occupied', label: 'Band',          color: '#2E75B6', n: totals.occupied },
-          { key: 'dirty',    label: 'Yigʻish kerak', color: '#8a93a3', n: totals.dirty },
+          { key: 'free',     label: 'Boʻsh', color: '#27AE60', n: totals.free },
+          { key: 'occupied', label: 'Band',  color: '#2E75B6', n: totals.occupied },
         ].map(s => (
           <Card key={s.key} className="!p-3 sm:!p-4">
             <div className="flex items-center gap-2">
@@ -405,7 +403,6 @@ export default function LocationsScreen({ orders, zones, tables, onAddZone, onAd
           { v: 'all', label: 'Hammasi', dot: '#8a93a3' },
           { v: 'free', label: 'Boʻsh', dot: '#27AE60' },
           { v: 'occupied', label: 'Band', dot: '#2E75B6' },
-          { v: 'dirty', label: 'Yigʻish kerak', dot: '#8a93a3' },
         ].map(s => {
           const active = statusFilter === s.v;
           return (
