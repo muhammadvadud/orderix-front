@@ -89,6 +89,7 @@ function CategoryGlyph({ cat }) {
 // ─── MY ORDERS ───────────────────────────────────
 
 export function MyOrdersScreen({ orders, onAdvance, onOpen, onGoNew }) {
+  const [pendingOrderId, setPendingOrderId] = useState(null);
   const activeCount = orders.filter(o => o.status !== 'closed').length;
   const counts = {
     all:       activeCount,
@@ -100,6 +101,16 @@ export function MyOrdersScreen({ orders, onAdvance, onOpen, onGoNew }) {
   const list = filter === 'all'
     ? orders.filter(o => o.status !== 'closed')
     : orders.filter(o => o.status === filter);
+
+  async function handleAdvance(id) {
+    if (pendingOrderId) return;
+    setPendingOrderId(id);
+    try {
+      await onAdvance(id);
+    } finally {
+      setPendingOrderId(cur => (String(cur) === String(id) ? null : cur));
+    }
+  }
 
   return (
     <div className="pb-6">
@@ -141,14 +152,22 @@ export function MyOrdersScreen({ orders, onAdvance, onOpen, onGoNew }) {
           : <EmptyOrders onGoNew={onGoNew} />
       ) : (
         <div className="px-4 md:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-          {list.map(o => <OrderCard key={o.id} order={o} onAdvance={onAdvance} onOpen={onOpen} />)}
+          {list.map(o => (
+            <OrderCard
+              key={o.id}
+              order={o}
+              pending={String(pendingOrderId) === String(o.id)}
+              onAdvance={handleAdvance}
+              onOpen={onOpen}
+            />
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function OrderCard({ order, onAdvance, onOpen }) {
+function OrderCard({ order, pending = false, onAdvance, onOpen }) {
   const action = nextAction(order.status);
   // List'da items bo'lmaydi — backend bergan son/summadan foydalanamiz.
   const itemCount = order.items.length ? orderItemCount(order) : (order.itemCount ?? 0);
@@ -200,17 +219,23 @@ function OrderCard({ order, onAdvance, onOpen }) {
       {action && (
         <div className="flex gap-2 px-3 pb-3">
           <button
+            disabled={pending}
             onClick={() => onAdvance(order.id)}
-            className="tap flex-1 h-11 rounded-xl font-semibold text-[13px] inline-flex items-center justify-center gap-2 text-white"
+            className="tap flex-1 h-11 rounded-xl font-semibold text-[13px] inline-flex items-center justify-center gap-2 text-white disabled:opacity-75 disabled:cursor-wait"
             style={{
               background: order.status === 'preparing' ? '#27AE60' : NAVY,
               boxShadow: order.status === 'preparing'
                 ? '0 2px 8px rgba(39,174,96,.4)'
                 : `0 2px 8px ${NAVY}66`,
             }}>
+            {pending ? (
+              <span className="w-4 h-4 rounded-full border-2 border-white/80 border-t-transparent animate-spin" />
+            ) : (
+              <CheckCircle size={15}/>
+            )}
             {order.status === 'preparing'
-              ? <><CheckCircle size={15}/> Yetkazildi</>
-              : <><CheckCircle size={15}/> Tugatish</>
+              ? 'Yetkazildi'
+              : 'Tugatish'
             }
           </button>
         </div>
@@ -259,6 +284,7 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
   const [editMode, setEditMode] = useState(false);
   const [editItems, setEditItems] = useState([]);
   const [addCat, setAddCat] = useState(CATEGORIES[0]?.id);
+  const [advancePending, setAdvancePending] = useState(false);
 
   if (!order) return null;
 
@@ -289,6 +315,16 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
     if (editItems.length === 0) return;
     onEdit(order.id, editItems);
     setEditMode(false);
+  }
+  async function handleAdvance() {
+    if (advancePending) return;
+    setAdvancePending(true);
+    try {
+      await onAdvance(order.id);
+      onClose();
+    } finally {
+      setAdvancePending(false);
+    }
   }
 
   const sub     = orderSubtotal(order);
@@ -513,9 +549,12 @@ export function OrderDetailSheet({ order, onClose, onAdvance, onEdit, onChangeIt
                 </button>
               )}
               {action && (
-                <button onClick={() => { onAdvance(order.id); onClose(); }}
-                  className="tap h-12 flex-[1.4] rounded-2xl text-white font-semibold"
+                <button onClick={handleAdvance} disabled={advancePending}
+                  className="tap h-12 flex-[1.4] rounded-2xl text-white font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-wait"
                   style={{ background: NAVY }}>
+                  {advancePending && (
+                    <span className="w-4 h-4 rounded-full border-2 border-white/80 border-t-transparent animate-spin" />
+                  )}
                   {action.label}
                 </button>
               )}
