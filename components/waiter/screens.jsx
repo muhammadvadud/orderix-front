@@ -886,14 +886,14 @@ function TableTile({ t, onClick }) {
 
 function TableSheet({ table, order, onClose, onOpenOrder }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-end md:items-center md:justify-center md:p-6" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6"
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" />
-      <div className="relative w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl"
+      <div className="relative w-full max-w-md max-h-[calc(100svh-2rem)] overflow-y-auto bg-white rounded-3xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}>
-        <div className="pt-2.5 pb-1 grid place-items-center md:hidden">
-          <div className="h-1 w-10 rounded-full bg-slate-300" />
-        </div>
-        <div className="px-5 md:px-6 pt-2 md:pt-5 pb-4 md:pb-5">
+        <div className="px-5 md:px-6 pt-5 pb-4 md:pb-5">
           <div className="flex items-start justify-between">
             <div>
               <div className="text-[22px] font-extrabold text-slate-900 leading-none">{table.label}</div>
