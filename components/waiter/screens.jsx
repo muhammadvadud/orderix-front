@@ -210,7 +210,7 @@ function OrderCard({ order, onAdvance, onOpen }) {
             }}>
             {order.status === 'preparing'
               ? <><CheckCircle size={15}/> Yetkazildi</>
-              : <><CheckCircle size={15}/> Tugatildi</>
+              : <><CheckCircle size={15}/> Tugatish</>
             }
           </button>
         </div>
