@@ -307,7 +307,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
   const filtered = useMemo(() => {
     let list = [...dateFiltered];
     if (statusFilter) list = list.filter(o => o.status === statusFilter);
-    if (waiterFilter) list = list.filter(o => o.waiterId === waiterFilter);
+    if (waiterFilter) list = list.filter(o => String(o.waiterId) === String(waiterFilter));
     if (query) {
       const q = query.toLowerCase();
       list = list.filter(o =>
@@ -429,7 +429,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
           <div className="lg:hidden border-t border-ink-100 p-3 grid grid-cols-1 gap-2 anim-fade">
             <Select value={waiterFilter} onChange={e => setWaiterFilter(e.target.value)}
                     placeholder="Barcha ofitsiantlar"
-                    options={waiters.map(w => ({ value: w.id, label: w.name }))} />
+                    options={waiters.map(w => ({ value: String(w.id), label: w.name }))} />
             <Select value={dateRange} onChange={e => setDateRange(e.target.value)}
                     options={[
                       { value: 'today', label: 'Bugun' },
@@ -455,7 +455,7 @@ export default function OrdersScreen({ orders, staff = [], menu = [], categories
                   className="w-44" />
           <Select value={waiterFilter} onChange={e => setWaiterFilter(e.target.value)}
                   placeholder="Barcha ofitsiantlar"
-                  options={waiters.map(w => ({ value: w.id, label: w.name }))}
+                  options={waiters.map(w => ({ value: String(w.id), label: w.name }))}
                   className="w-52" />
           <Select value={dateRange} onChange={e => setDateRange(e.target.value)}
                   options={[
