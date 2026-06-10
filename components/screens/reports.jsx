@@ -95,8 +95,8 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
 
       {/* Davr / sana bo'yicha filter */}
       <Card className="!p-3 sm:!p-4 mb-4 sm:mb-5">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="w-full sm:w-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[11rem_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-3">
+          <div className="min-w-0">
             <div className="text-[11px] font-medium text-ink-500 mb-1">Davr</div>
             <Select value={customRange ? '' : range} onChange={e => onRangeChange(e.target.value)}
                     placeholder={customRange ? 'Maxsus oraliq' : undefined}
@@ -104,18 +104,18 @@ export default function ReportsScreen({ orders, menu = [], liveKey = 0 }) {
                       { value: '7d', label: 'Soʻnggi 7 kun' },
                       { value: '30d', label: 'Soʻnggi 30 kun' },
                       { value: '90d', label: 'Soʻnggi 90 kun' },
-                    ]} className="w-full sm:w-44" />
+                    ]} className="w-full" />
           </div>
-          <div className="flex-1 min-w-[130px]">
+          <div className="min-w-0">
             <div className="text-[11px] font-medium text-ink-500 mb-1">Sanadan</div>
-            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={dateTo || undefined} />
+            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={dateTo || undefined} className="min-w-0" />
           </div>
-          <div className="flex-1 min-w-[130px]">
+          <div className="min-w-0">
             <div className="text-[11px] font-medium text-ink-500 mb-1">Sanagacha</div>
-            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} min={dateFrom || undefined} />
+            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} min={dateFrom || undefined} className="min-w-0" />
           </div>
           {(dateFrom || dateTo) && (
-            <Button variant="outline" icon="X" onClick={clearDates}>Tozalash</Button>
+            <Button variant="outline" icon="X" onClick={clearDates} className="w-full sm:w-auto">Tozalash</Button>
           )}
         </div>
       </Card>
