@@ -208,7 +208,7 @@ export default function AppShell() {
 
   // ---- Order handlers ----
   async function updateOrderStatus(id, status) {
-    const cur = orders.find(o => o.id === id);
+    const cur = orderDetail?.id === id ? orderDetail : orders.find(o => o.id === id);
     if (cur && cur.status === status) return;
     try {
       // backend oqimi: preparing → delivered → closed. To'g'ridan-to'g'ri yopib bo'lmaydi.
@@ -219,6 +219,14 @@ export default function AppShell() {
       await reloadOrders();
       if (id === openOrderId) setOrderDetail(updated);
     } catch (e) {
+      // Ba'zi backend oqimlarda birinchi o'tish saqlanadi, keyingi o'tish validatsiyada qaytadi.
+      // Bunday holatda foydalanuvchiga xato ko'rsatmaymiz, faqat yangi statusni aks ettiramiz.
+      try {
+        const fresh = await svc.getOrder(id, lookups);
+        await reloadOrders();
+        if (id === openOrderId) setOrderDetail(fresh);
+        if (!cur || fresh.status !== cur.status) return;
+      } catch {}
       alert(e.message || 'Holatni oʻzgartirishda xatolik');
     }
   }
